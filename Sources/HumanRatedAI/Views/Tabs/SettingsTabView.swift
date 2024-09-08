@@ -18,9 +18,25 @@ struct SettingsTabView: View {
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 }
-                .foregroundStyle(.gray)
+                Text("\(Bundle.main.displayName) v\(Bundle.main.appVersionLong) build \(Bundle.main.appBuild)")
+                    .foregroundStyle(.gray)
             }
             .navigationTitle("Settings")
         }
+    }
+}
+
+// https://stackoverflow.com/a/68912269/7851379
+private extension Bundle {
+    var appBuild: String { getInfo("CFBundleVersion") }
+    var appVersionLong: String { getInfo("CFBundleShortVersionString") }
+    var displayName: String { getInfo("CFBundleDisplayName") }
+    
+    func getInfo(_ string: String) -> String {
+#if SKIP
+        "⚠️"
+#else
+        infoDictionary?[string] as? String ?? "⚠️"
+#endif
     }
 }
