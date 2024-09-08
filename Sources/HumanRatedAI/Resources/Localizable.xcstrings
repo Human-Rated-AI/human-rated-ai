@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "AI" : {
+
+    },
+    "AI Bot List" : {
+
+    },
     "Appearance" : {
       "localizations" : {
         "es" : {
@@ -28,6 +34,12 @@
           }
         }
       }
+    },
+    "Create" : {
+
+    },
+    "Create AI Bot" : {
+
     },
     "Dark" : {
       "localizations" : {
@@ -57,7 +69,14 @@
         }
       }
     },
+    "Favorite AI Bots" : {
+
+    },
+    "Favs" : {
+
+    },
     "Hello [%@](https://skip.tools)!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -86,6 +105,7 @@
       }
     },
     "Home" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -114,6 +134,7 @@
       }
     },
     "Item %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -170,6 +191,7 @@
       }
     },
     "Name" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -198,6 +220,7 @@
       }
     },
     "Powered by %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -226,6 +249,7 @@
       }
     },
     "Screen %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -310,6 +334,7 @@
       }
     },
     "Welcome" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {

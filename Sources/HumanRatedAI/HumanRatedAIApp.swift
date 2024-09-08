@@ -9,16 +9,16 @@ let androidSDK = ProcessInfo.processInfo.environment["android.os.Build.VERSION.S
 
 /// The shared top-level view for the app, loaded from the platform-specific App delegates below.
 ///
-/// The default implementation merely loads the `ContentView` for the app and logs a message.
+/// The default implementation merely loads the `RootTabView` for the app and logs a message.
 public struct RootView : View {
     public init() {
     }
 
     public var body: some View {
-        ContentView()
+        RootTabView()
             .task {
-                logger.log("Welcome to Skip on \(androidSDK != nil ? "Android" : "Darwin")!")
-                logger.warning("Skip app logs are viewable in the Xcode console for iOS; Android logs can be viewed in Studio or using adb logcat")
+                logger.log("Welcome to Human Rated AI on \(androidSDK != nil ? "Android" : "Darwin")!")
+                logger.warning("Android logs can be viewed in Studio or using adb logcat")
             }
     }
 }
