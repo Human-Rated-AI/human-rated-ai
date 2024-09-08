@@ -204,7 +204,7 @@
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 2024.09.08;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Human Rated AI";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -217,7 +217,7 @@
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 2024.09.08;
 				ENABLE_PREVIEWS = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Human Rated AI";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
