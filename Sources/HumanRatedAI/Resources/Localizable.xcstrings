@@ -1,16 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ v%@ build %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ v%2$@ build %3$@"
-          }
-        }
-      }
-    },
     "AI" : {
 
     },

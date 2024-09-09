@@ -1,8 +1,8 @@
 import SwiftUI
 
 public struct RootTabView: View {
+    @AppStorage("appearance") private var appearance = ""
     @AppStorage("tab") private var tab = Tab.ai
-    @State private var appearance = ""
     
     public init() {}
 
