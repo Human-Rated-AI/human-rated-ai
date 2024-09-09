@@ -18,7 +18,7 @@ struct SettingsTabView: View {
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
                 }
-                let lines = [appVersion, osVersion]
+                let lines = [appVersion, deviceModel, osVersion]
                 ForEach(Array(lines.enumerated()), id: \.offset) { _, text in
                     Text(text)
                         .foregroundStyle(.gray)
@@ -49,13 +49,24 @@ private extension SettingsTabView {
         return "\(displayName) v\(appVersionLong) build \(appBuild.inserting(".", at: [4, 6]))"
     }
     
+    var deviceModel: String {
+#if SKIP
+        let deviceBrand = android.os.Build.MANUFACTURER
+        let deviceModel = android.os.Build.MODEL
+        let deviceName = android.os.Build.DEVICE
+        return "\(deviceBrand) \(deviceModel) \(deviceName)"
+#else
+        "\(UIDevice.current.name)"
+#endif
+    }
+    
     var osVersion: String {
-        #if SKIP
+#if SKIP
         "Android \(android.os.Build.VERSION.RELEASE)"
-        #else
+#else
         let device = UIDevice.current
         return "\(device.systemName) \(device.systemVersion)"
-        #endif
+#endif
     }
 }
 
