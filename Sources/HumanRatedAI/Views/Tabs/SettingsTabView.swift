@@ -13,12 +13,15 @@ struct SettingsTabView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Text(version)
-                    .foregroundStyle(.gray)
                 Picker("Appearance", selection: $appearance) {
                     Text("System").tag("")
                     Text("Light").tag("light")
                     Text("Dark").tag("dark")
+                }
+                let lines = [appVersion, osVersion]
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, text in
+                    Text(text)
+                        .foregroundStyle(.gray)
                 }
             }
             .navigationTitle("Settings")
@@ -27,7 +30,7 @@ struct SettingsTabView: View {
 }
 
 private extension SettingsTabView {
-    var version: String {
+    var appVersion: String {
 #if SKIP
         // Asked for help https://github.com/orgs/skiptools/discussions/223
         let context = ProcessInfo.processInfo.androidContext
@@ -44,6 +47,15 @@ private extension SettingsTabView {
         let appBuild = Bundle.main.appBuild
 #endif
         return "\(displayName) v\(appVersionLong) build \(appBuild.inserting(".", at: [4, 6]))"
+    }
+    
+    var osVersion: String {
+        #if SKIP
+        "Android \(android.os.Build.VERSION.RELEASE)"
+        #else
+        let device = UIDevice.current
+        return "\(device.systemName) \(device.systemVersion)"
+        #endif
     }
 }
 
