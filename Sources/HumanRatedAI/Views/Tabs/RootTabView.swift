@@ -1,8 +1,8 @@
 import SwiftUI
 
 public struct RootTabView: View {
-    @AppStorage("tab") var tab = Tab.ai
-    @State var appearance = ""
+    @AppStorage("appearance") private var appearance = ""
+    @AppStorage("tab") private var tab = Tab.ai
     
     public init() {}
 
@@ -23,17 +23,7 @@ public struct RootTabView: View {
             .font(.largeTitle)
             .tag(Tab.favs)
 
-            NavigationStack {
-                Form {
-                    Picker("Appearance", selection: $appearance) {
-                        Text("System").tag("")
-                        Text("Light").tag("light")
-                        Text("Dark").tag("dark")
-                    }
-                    .foregroundStyle(.gray)
-                }
-                .navigationTitle("Settings")
-            }
+            SettingsTabView(appearance: $appearance)
             .tabItem { Label("Settings", systemImage: "gearshape") }
             .tag(Tab.settings)
         }
@@ -41,6 +31,6 @@ public struct RootTabView: View {
     }
 }
 
-enum Tab : String, Hashable {
+private enum Tab : String, Hashable {
     case ai, create, favs, settings
 }

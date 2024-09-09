@@ -202,7 +202,7 @@
 		499CD4422AC5B799001AE8D8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 2024.09.08;
+				CURRENT_PROJECT_VERSION = 20240909;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -215,7 +215,7 @@
 		499CD4432AC5B799001AE8D8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CURRENT_PROJECT_VERSION = 2024.09.08;
+				CURRENT_PROJECT_VERSION = 20240909;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
