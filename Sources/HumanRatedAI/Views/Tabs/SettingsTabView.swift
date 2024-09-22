@@ -14,15 +14,29 @@ import SwiftUI
 struct SettingsTabView: View {
     @Binding var appearance: String
     @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
+    @State var errorMessage = ""
+    @State var models = [String]()
     
     var body: some View {
         NavigationStack {
             List {
-                Section("AI") {
-                    ListSettingsView(list: aiInfo)
-                }
                 Section("App") {
                     ListSettingsView(list: [appVersion, deviceModel, osVersion])
+                }
+                Section("Deployment") {
+                    ListSettingsView(list: aiInfo)
+                }
+                if !errorMessage.isEmpty {
+                    Section("Error") {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                    
+                }
+                if !models.isEmpty {
+                    Section("Models") {
+                        ListSettingsView(list: models)
+                    }
                 }
                 Section("Settings") {
                     Picker("Appearance", selection: $appearance) {
@@ -34,13 +48,25 @@ struct SettingsTabView: View {
             }
         }
         .navigationTitle("Settings")
+        .onAppear {
+            Task {
+                do {
+                    let deployments = try await NetworkManager.ai?.getDeployments()
+                    if let deployments {
+                        let modelNames = deployments.map { "\($0.properties.model.name)" }
+                        models = Set(modelNames).sorted()
+                    }
+                } catch {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
 }
 
 private extension SettingsTabView {
     var aiInfo: [String] {
-        let model = aiEnvironmentManager.aiModel ?? "unknown"
-        return ["Model: \(model)"]
+        [aiEnvironmentManager.aiModel ?? "unknown"]
     }
     
     var appVersion: String {
