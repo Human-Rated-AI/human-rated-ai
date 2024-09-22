@@ -60,7 +60,11 @@ private extension SettingsTabView {
         let deviceName = android.os.Build.DEVICE
         return "\(deviceBrand) \(deviceModel) \(deviceName)"
 #else
-        "\(UIDevice.current.name)"
+        let model = UIDevice.current.localizedModel
+        let name = UIDevice.current.name
+        if model.contains(name) { return model }
+        if name.contains(model) { return name }
+        return "\(model) \(name)"
 #endif
     }
     
