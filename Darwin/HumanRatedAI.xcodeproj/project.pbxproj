@@ -203,6 +203,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 20240909;
+				DEVELOPMENT_TEAM = 8J39KF9DMS;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -216,6 +217,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CURRENT_PROJECT_VERSION = 20240909;
+				DEVELOPMENT_TEAM = 8J39KF9DMS;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Hurated AI";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
