@@ -73,3 +73,7 @@ Carthage/Build/
 **/fastlane/screenshots/**/*.png
 **/fastlane/metadata/android/*/images/**/*.png
 **/fastlane/test_output
+
+# App Specific Variables
+.env
+env

@@ -13,27 +13,62 @@ import SwiftUI
 
 struct SettingsTabView: View {
     @Binding var appearance: String
+    @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
+    @State var errorMessage = ""
+    @State var models = [String]()
     
     var body: some View {
         NavigationStack {
-            Form {
-                Picker("Appearance", selection: $appearance) {
-                    Text("System").tag("")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
+            List {
+                Section("App") {
+                    ListSettingsView(list: [appVersion, deviceModel, osVersion])
                 }
-                let lines = [appVersion, deviceModel, osVersion]
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, text in
-                    Text(text)
-                        .foregroundStyle(.gray)
+                Section("Deployment") {
+                    ListSettingsView(list: aiInfo)
+                }
+                if !errorMessage.isEmpty {
+                    Section("Error") {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                    
+                }
+                if !models.isEmpty {
+                    Section("Models") {
+                        ListSettingsView(list: models)
+                    }
+                }
+                Section("Settings") {
+                    Picker("Appearance", selection: $appearance) {
+                        Text("System").tag("")
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                    }
                 }
             }
-            .navigationTitle("Settings")
+        }
+        .navigationTitle("Settings")
+        .onAppear {
+            Task {
+                do {
+                    let deployments = try await NetworkManager.ai?.getDeployments()
+                    if let deployments {
+                        let modelNames = deployments.map { "\($0.properties.model.name)" }
+                        models = Set(modelNames).sorted()
+                    }
+                } catch {
+                    errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 }
 
 private extension SettingsTabView {
+    var aiInfo: [String] {
+        [aiEnvironmentManager.aiModel ?? "unknown"]
+    }
+    
     var appVersion: String {
 #if SKIP
         // Asked for help https://github.com/orgs/skiptools/discussions/223
@@ -87,3 +122,13 @@ private extension Bundle {
     func getInfo(_ string: String) -> String { infoDictionary?[string] as? String ?? "⚠️" }
 }
 #endif
+
+private struct ListSettingsView: View {
+    let list: [String]
+    var body: some View {
+        ForEach(Array(list.enumerated()), id: \.offset) { _, text in
+            Text(text)
+                .foregroundStyle(.gray)
+        }
+    }
+}

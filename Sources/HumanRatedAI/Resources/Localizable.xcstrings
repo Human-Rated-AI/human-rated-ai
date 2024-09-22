@@ -7,6 +7,9 @@
     "AI Bot List" : {
 
     },
+    "App" : {
+
+    },
     "Appearance" : {
       "localizations" : {
         "es" : {
@@ -68,6 +71,12 @@
           }
         }
       }
+    },
+    "Deployment" : {
+
+    },
+    "Error" : {
+
     },
     "Favorite AI Bots" : {
 
@@ -189,6 +198,9 @@
           }
         }
       }
+    },
+    "Models" : {
+
     },
     "Name" : {
       "extractionState" : "stale",

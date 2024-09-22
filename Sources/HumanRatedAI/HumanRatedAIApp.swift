@@ -6,7 +6,8 @@ import Foundation
 import OSLog
 import SwiftUI
 
-let logger: Logger = Logger(subsystem: "ai.humanrated.app", category: "HumanRatedAI")
+let aiEnvironmentManager = EnvironmentManager.ai
+let logger = Logger(subsystem: "ai.humanrated.app", category: "HumanRatedAI")
 
 /// The Android SDK number we are running against, or `nil` if not running on Android
 let androidSDK = ProcessInfo.processInfo.environment["android.os.Build.VERSION.SDK_INT"].flatMap({ Int($0) })
@@ -15,11 +16,11 @@ let androidSDK = ProcessInfo.processInfo.environment["android.os.Build.VERSION.S
 ///
 /// The default implementation merely loads the `RootTabView` for the app and logs a message.
 public struct RootView : View {
-    public init() {
-    }
+    public init() {}
 
     public var body: some View {
         RootTabView()
+            .environmentObject(aiEnvironmentManager)
             .task {
                 logger.log("Welcome to Human Rated AI on \(androidSDK != nil ? "Android" : "Darwin")!")
                 logger.warning("Android logs can be viewed in Studio or using adb logcat")
