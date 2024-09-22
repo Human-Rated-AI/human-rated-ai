@@ -16,24 +16,37 @@ struct SettingsTabView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Picker("Appearance", selection: $appearance) {
-                    Text("System").tag("")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
+            List {
+                Section("AI") {
+                    ListSettingsView(list: aiInfo)
                 }
-                let lines = [appVersion, deviceModel, osVersion]
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, text in
-                    Text(text)
-                        .foregroundStyle(.gray)
+                Section("App") {
+                    ListSettingsView(list: [appVersion, deviceModel, osVersion])
+                }
+                Section("Settings") {
+                    Picker("Appearance", selection: $appearance) {
+                        Text("System").tag("")
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                    }
                 }
             }
-            .navigationTitle("Settings")
         }
+        .navigationTitle("Settings")
     }
 }
 
 private extension SettingsTabView {
+    var aiInfo: [String] {
+        let keys = [/*"AI_KEY",*/ "AI_MODEL", /*"AI_URL",*/]
+        let variables = EnvironmentManager.variables(from: "env", keys: keys)
+        return keys.map { key in
+            let variable = (variables[key] ?? "nil") ?? "nil"
+            let value = key == "AI_KEY" ? "\(variable.prefix(3))..." : variable
+            return "\(key): \(value)"
+        }
+    }
+    
     var appVersion: String {
 #if SKIP
         // Asked for help https://github.com/orgs/skiptools/discussions/223
@@ -87,3 +100,13 @@ private extension Bundle {
     func getInfo(_ string: String) -> String { infoDictionary?[string] as? String ?? "⚠️" }
 }
 #endif
+
+private struct ListSettingsView: View {
+    let list: [String]
+    var body: some View {
+        ForEach(Array(list.enumerated()), id: \.offset) { _, text in
+            Text(text)
+                .foregroundStyle(.gray)
+        }
+    }
+}
