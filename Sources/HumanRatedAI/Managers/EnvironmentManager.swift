@@ -28,13 +28,16 @@ extension EnvironmentManager {
         static let aiModel = "AI_MODEL"
         static let aiURL = "AI_URL"
     }
+    private static var _ai: EnvironmentManager?
     static var ai: EnvironmentManager {
-        EnvironmentManager(filename: "env", keys: [Keys.aiKey, Keys.aiModel, Keys.aiURL])
+        if let _ai { return _ai }
+        let _ai = EnvironmentManager(filename: "env", keys: [Keys.aiKey, Keys.aiModel, Keys.aiURL])
+        self._ai = _ai
+        return _ai
     }
     var aiKey: String? { variables[Keys.aiKey] ?? nil }
     var aiModel: String? { variables[Keys.aiModel] ?? nil }
     var aiURL: URL? { (variables[Keys.aiURL] ?? nil)?.asURL }
-    
 }
 
 private extension EnvironmentManager {
