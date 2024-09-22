@@ -11,14 +11,30 @@
 
 import SwiftUI
 
+// MARK: - Generic
 class EnvironmentManager: ObservableObject {
-    var aiModel: String? { variables["AI_MODEL"] ?? nil }
     var keys: [String] { [String](variables.keys) }
     let variables: [String: String?]
     
-    init(filename: String = "env", keys: [String] = ["AI_KEY", "AI_MODEL", "AI_URL"]) {
+    private init(filename: String, keys: [String]) {
         self.variables = EnvironmentManager.variables(from: filename, keys: keys)
     }
+}
+
+// MARK: - AI
+extension EnvironmentManager {
+    private struct Keys {
+        static let aiKey = "AI_KEY"
+        static let aiModel = "AI_MODEL"
+        static let aiURL = "AI_URL"
+    }
+    static var ai: EnvironmentManager {
+        EnvironmentManager(filename: "env", keys: [Keys.aiKey, Keys.aiModel, Keys.aiURL])
+    }
+    var aiKey: String? { variables[Keys.aiKey] ?? nil }
+    var aiModel: String? { variables[Keys.aiModel] ?? nil }
+    var aiURL: URL? { (variables[Keys.aiURL] ?? nil)?.asURL }
+    
 }
 
 private extension EnvironmentManager {

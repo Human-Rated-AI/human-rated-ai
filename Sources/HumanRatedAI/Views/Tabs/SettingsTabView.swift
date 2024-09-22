@@ -13,7 +13,7 @@ import SwiftUI
 
 struct SettingsTabView: View {
     @Binding var appearance: String
-    @EnvironmentObject var environmentManager: EnvironmentManager
+    @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
     
     var body: some View {
         NavigationStack {
@@ -39,7 +39,7 @@ struct SettingsTabView: View {
 
 private extension SettingsTabView {
     var aiInfo: [String] {
-        let model = environmentManager.aiModel ?? "unknown"
+        let model = aiEnvironmentManager.aiModel ?? "unknown"
         return ["Model: \(model)"]
     }
     
