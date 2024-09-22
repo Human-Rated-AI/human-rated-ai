@@ -9,16 +9,26 @@
 //  Created by Denis Bystruev on 9/22/24.
 //
 
-import Foundation
+import SwiftUI
 
-class EnvironmentManager {
+class EnvironmentManager: ObservableObject {
+    var aiModel: String? { variables["AI_MODEL"] ?? nil }
+    var keys: [String] { [String](variables.keys) }
+    let variables: [String: String?]
+    
+    init(filename: String = "env", keys: [String] = ["AI_KEY", "AI_MODEL", "AI_URL"]) {
+        self.variables = EnvironmentManager.variables(from: filename, keys: keys)
+    }
+}
+
+private extension EnvironmentManager {
     static func variables(from filename: String, keys: [String]) -> [String: String?] {
         guard let envFileURL = Bundle.module.url(forResource: filename, withExtension: nil),
               let contents = try? String(contentsOf: envFileURL) else { return [:] }
         return parseEnvFile(contents: contents, keys: keys)
     }
     
-    private static func parseEnvFile(contents: String, keys: [String]) -> [String: String?] {
+    static func parseEnvFile(contents: String, keys: [String]) -> [String: String?] {
         var envVars = [String: String?]()
         let lines = contents.split(separator: "\n")
         for line in lines {
