@@ -48,7 +48,7 @@ struct CreateTabView: View {
                 }
                 
                 Section(header: Text("AI Configuration").font(.subheadline)) {
-                    TextField("Image Caption", text: Binding(
+                    TextField("Image Caption Instructions", text: Binding(
                         get: { aiSetting.caption ?? "" },
                         set: { aiSetting.caption = $0.isEmpty ? nil : $0 }
                     ))
