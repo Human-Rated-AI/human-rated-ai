@@ -1,42 +1,82 @@
-# HumanRatedAI
+# Human-Rated AI
 
-This is a free [Skip](https://skip.tools) dual-platform app project.
-It builds a native app for both iOS and Android.
+A cross-platform application built with [Skip](https://skip.tools) for rating and evaluating AI systems on both iOS and Android.
+
+## Project Overview
+
+Human-Rated AI allows users to:
+
+- Browse and explore available AI bots and agents
+- Create custom AI bots with personalized configurations
+- Save favorite AI bots for quick access
+- Manage application settings and preferences
+
+The application features Firebase authentication with Apple and Google sign-in methods to protect user-specific functionality.
+
+## Architecture
+
+This project follows a modern SwiftUI architecture that is transpiled to Android using Skip:
+
+- **UI Layer**: TabView-based navigation with four main sections (AI, Create, Favorites, Settings)
+- **Data Management**: Environment and Network managers for API communication
+- **Authentication**: Firebase-based authentication for secure access to user features
+- **Cross-Platform Support**: Conditional compilation to handle platform differences
 
 ## Building
 
-This project is both a stand-alone Swift Package Manager module,
-as well as an Xcode project that builds and transpiles the project
-into a Kotlin Gradle project for Android using the Skip plugin.
+This project is both a stand-alone Swift Package Manager module and an Xcode project that builds and transpiles the code into a Kotlin Gradle project for Android using the Skip plugin.
 
-Building the module requires that Skip be installed using
-[Homebrew](https://brew.sh) with `brew install skiptools/skip/skip`.
+### Prerequisites
 
-This will also install the necessary transpiler prerequisites:
-Kotlin, Gradle, and the Android build tools.
+Building requires Skip to be installed using [Homebrew](https://brew.sh):
 
-Installation prerequisites can be confirmed by running `skip checkup`.
+```bash
+brew install skiptools/skip/skip
+```
+
+This installs the necessary transpiler prerequisites:
+- Kotlin
+- Gradle
+- Android build tools
+
+Installation can be verified by running:
+
+```bash
+skip checkup
+```
+
+### Firebase Configuration
+
+The app uses Firebase for authentication:
+
+1. Create a project on the [Firebase Console](https://console.firebase.google.com/)
+2. Register your iOS app and download the GoogleService-Info.plist
+3. Register your Android app and download the google-services.json
+4. Configure the Apple and Google sign-in methods in the Firebase console
+5. Add the proper URL schemes in your project configuration
 
 ## Testing
 
-The module can be tested using the standard `swift test` command
-or by running the test target for the macOS destination in Xcode,
-which will run the Swift tests as well as the transpiled
-Kotlin JUnit tests in the Robolectric Android simulation environment.
+The module can be tested using:
 
-Parity testing can be performed with `skip test`,
-which will output a table of the test results for both platforms.
+- Swift tests: `swift test` command
+- Xcode tests: Run the test target for macOS in Xcode
+- Parity tests: `skip test` to compare results across platforms
 
 ## Running
 
-Xcode and Android Studio must be downloaded and installed in order to
-run the app in the iOS simulator / Android emulator.
-An Android emulator must already be running, which can be launched from 
-Android Studio's Device Manager.
+To run the application:
 
-To run both the Swift and Kotlin apps simultaneously, 
-launch the HumanRatedAIApp target from Xcode.
-A build phases runs the "Launch Android APK" script that
-will deploy the transpiled app a running Android emulator or connected device.
-Logging output for the iOS app can be viewed in the Xcode console, and in
-Android Studio's logcat tab for the transpiled Kotlin app.
+1. Ensure both Xcode and Android Studio are installed
+2. Launch an Android emulator from Android Studio's Device Manager
+3. Open the project in Xcode and run the HumanRatedAIApp target
+4. A build script will automatically deploy to the Android emulator
+
+### Debugging
+
+- iOS logs: Available in the Xcode console
+- Android logs: View in Android Studio's logcat tab
+
+## License
+
+This software is free: you can redistribute and/or modify it under the terms of the GNU General Public License 3.0 as published by the Free Software Foundation https://fsf.org
