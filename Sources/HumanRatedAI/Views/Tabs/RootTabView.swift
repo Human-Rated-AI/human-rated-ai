@@ -17,7 +17,7 @@ public struct RootTabView: View {
                 .tabItem { Label("AI", systemImage: "face.smiling") }
                 .tag(Tab.ai)
             
-            Text("Create AI Bot")
+            CreateTabView()
                 .tabItem { Label("Create", systemImage: "plus") }
                 .font(.largeTitle)
                 .tag(Tab.create)

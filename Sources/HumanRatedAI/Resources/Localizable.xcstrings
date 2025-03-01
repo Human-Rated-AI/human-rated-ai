@@ -7,6 +7,9 @@
     "AI Bot List" : {
 
     },
+    "AI Configuration" : {
+
+    },
     "App" : {
 
     },
@@ -37,6 +40,9 @@
           }
         }
       }
+    },
+    "Basic Information" : {
+
     },
     "Create" : {
 
@@ -73,6 +79,9 @@
       }
     },
     "Deployment" : {
+
+    },
+    "Description" : {
 
     },
     "Error" : {
@@ -142,6 +151,15 @@
         }
       }
     },
+    "Image" : {
+
+    },
+    "Image Caption" : {
+
+    },
+    "Image URL" : {
+
+    },
     "Item %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -203,7 +221,6 @@
 
     },
     "Name" : {
-      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -259,6 +276,9 @@
           }
         }
       }
+    },
+    "Prefix Instructions" : {
+
     },
     "Screen %lld" : {
       "extractionState" : "stale",
@@ -317,6 +337,9 @@
         }
       }
     },
+    "Suffix Instructions" : {
+
+    },
     "System" : {
       "localizations" : {
         "es" : {
@@ -373,6 +396,9 @@
           }
         }
       }
+    },
+    "Welcome Message" : {
+
     }
   },
   "version" : "1.0"
