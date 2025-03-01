@@ -12,6 +12,7 @@
 		496BDBEE2B8A7E9C00C09264 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 496BDBED2B8A7E9C00C09264 /* Localizable.xcstrings */; };
 		499CD43B2AC5B799001AE8D8 /* HumanRatedAIAppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F90C2B2A52156200F06D93 /* HumanRatedAIAppMain.swift */; };
 		499CD4402AC5B799001AE8D8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49F90C2F2A52156300F06D93 /* Assets.xcassets */; };
+		6904388C2D72F9720082E38F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 6904388B2D72F9720082E38F /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +41,7 @@
 		49F90C2B2A52156200F06D93 /* HumanRatedAIAppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HumanRatedAIAppMain.swift; path = Sources/HumanRatedAIAppMain.swift; sourceTree = SOURCE_ROOT; };
 		49F90C2F2A52156300F06D93 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		49F90C312A52156300F06D93 /* Entitlements.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Entitlements.plist; sourceTree = "<group>"; };
+		6904388B2D72F9720082E38F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,14 +75,15 @@
 		49F90C1F2A52156200F06D93 = {
 			isa = PBXGroup;
 			children = (
-				496EB72F2A6AE4DE00C1253C /* README.md */,
+				493609562A6B7EAE00C401E2 /* HumanRatedAI */,
 				496EB72F2A6AE4DE00C1253A /* Skip.env */,
+				496EB72F2A6AE4DE00C1253C /* README.md */,
+				6904388B2D72F9720082E38F /* GoogleService-Info.plist */,
 				496EB72F2A6AE4DE00C1253B /* HumanRatedAI.xcconfig */,
 				496BDBED2B8A7E9C00C09264 /* Localizable.xcstrings */,
-				493609562A6B7EAE00C401E2 /* HumanRatedAI */,
 				49F90C2A2A52156200F06D93 /* App */,
-				49AB54462B066A7E007B79B2 /* SkipStone */,
 				496BDBEC2B89A47800C09264 /* Products */,
+				49AB54462B066A7E007B79B2 /* SkipStone */,
 			);
 			sourceTree = "<group>";
 		};
@@ -160,6 +163,7 @@
 			files = (
 				499CD4402AC5B799001AE8D8 /* Assets.xcassets in Resources */,
 				496BDBEE2B8A7E9C00C09264 /* Localizable.xcstrings in Resources */,
+				6904388C2D72F9720082E38F /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

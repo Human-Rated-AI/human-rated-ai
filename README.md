@@ -50,8 +50,8 @@ skip checkup
 The app uses Firebase for authentication:
 
 1. Create a project on the [Firebase Console](https://console.firebase.google.com/)
-2. Register your iOS app and download the GoogleService-Info.plist
-3. Register your Android app and download the google-services.json
+2. Register your iOS app and download the GoogleService-Info.plist to Darwin/ folder
+3. Register your Android app and download the google-services.json to Android/app/ folder
 4. Configure the Apple and Google sign-in methods in the Firebase console
 5. Add the proper URL schemes in your project configuration
 

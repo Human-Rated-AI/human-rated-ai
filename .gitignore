@@ -77,3 +77,7 @@ Carthage/Build/
 # App Specific Variables
 .env
 env
+
+# Firebase Config
+GoogleService-Info.plist
+google-services.json
