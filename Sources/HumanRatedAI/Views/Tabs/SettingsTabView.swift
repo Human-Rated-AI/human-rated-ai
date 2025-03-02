@@ -14,6 +14,7 @@ import SwiftUI
 struct SettingsTabView: View {
     @Binding var appearance: String
     @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
+    @EnvironmentObject var authManager: AuthManager
     @State var errorMessage = ""
     @State var models = [String]()
     
@@ -22,6 +23,12 @@ struct SettingsTabView: View {
             List {
                 Section("App") {
                     ListSettingsView(list: [appVersion, deviceModel, osVersion])
+                }
+                if let user = authManager.user {
+                    Section("User") {
+                        ListSettingsView(list: [user.displayName?.nonEmptyTrimmed ?? "Name not shared",
+                                                user.email?.nonEmptyTrimmed ?? "E-mail not shared"])
+                    }
                 }
                 Section("Deployment") {
                     ListSettingsView(list: aiInfo)

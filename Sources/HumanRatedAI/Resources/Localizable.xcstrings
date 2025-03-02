@@ -44,6 +44,12 @@
     "Basic Information" : {
 
     },
+    "Cancel" : {
+
+    },
+    "Continue with Google" : {
+
+    },
     "Create" : {
 
     },
@@ -337,6 +343,15 @@
         }
       }
     },
+    "Sign In" : {
+
+    },
+    "Sign In Required" : {
+
+    },
+    "Sign in to continue" : {
+
+    },
     "Suffix Instructions" : {
 
     },
@@ -368,8 +383,10 @@
         }
       }
     },
+    "User" : {
+
+    },
     "Welcome" : {
-      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {

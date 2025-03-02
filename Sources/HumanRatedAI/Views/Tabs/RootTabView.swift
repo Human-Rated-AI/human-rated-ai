@@ -7,34 +7,61 @@ import SwiftUI
 public struct RootTabView: View {
     @AppStorage("appearance") private var appearance = ""
     @AppStorage("tab") private var tab = Tab.ai
+    @StateObject private var authManager = AuthManager.shared
+    @State private var showAuthSheet = false
     
     public init() {}
     
     public var body: some View {
         TabView(selection: $tab) {
+            // AI Tab - accessible to all users
             Text("AI Bot List")
                 .font(.largeTitle)
                 .tabItem { Label("AI", systemImage: "face.smiling") }
                 .tag(Tab.ai)
             
-            CreateTabView()
-                .tabItem { Label("Create", systemImage: "plus") }
-                .font(.largeTitle)
-                .tag(Tab.create)
+            // Create Tab - requires authentication
+            Group {
+                if authManager.isAuthenticated {
+                    CreateTabView()
+                } else {
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To create AI bots")
+                }
+            }
+            .tabItem { Label("Create", systemImage: "plus") }
+            .tag(Tab.create)
             
-            Text("Favorite AI Bots")
-                .tabItem { Label("Favs", systemImage: "star") }
-                .font(.largeTitle)
-                .tag(Tab.favs)
+            // Favorites Tab - requires authentication
+            Group {
+                if authManager.isAuthenticated {
+                    Text("Favorite AI Bots")
+                        .font(.largeTitle)
+                } else {
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To view your favorites")
+                }
+            }
+            .tabItem { Label("Favs", systemImage: "star") }
+            .tag(Tab.favs)
             
-            SettingsTabView(appearance: $appearance)
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
+            // Settings Tab - requires authentication
+            Group {
+                if authManager.isAuthenticated {
+                    SettingsTabView(appearance: $appearance)
+                } else {
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To manage the settings")
+                }
+            }
+            .tabItem { Label("Settings", systemImage: "gearshape") }
+            .tag(Tab.settings)
         }
+        .sheet(isPresented: $showAuthSheet) {
+            AuthView(showAuthSheet: $showAuthSheet)
+        }
+        .environmentObject(authManager)
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
     }
 }
 
-private enum Tab : String, Hashable {
+private enum Tab: String, Hashable {
     case ai, create, favs, settings
 }
