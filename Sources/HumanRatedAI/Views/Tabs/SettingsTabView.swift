@@ -52,6 +52,19 @@ struct SettingsTabView: View {
                         Text("Dark").tag("dark")
                     }
                 }
+                Section {
+                    if authManager.user != nil {
+                        Button("Log Out") {
+                            authManager.signOut()
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                }
+                .listRowBackground(Color.clear)
             }
         }
         .navigationTitle("Settings")
