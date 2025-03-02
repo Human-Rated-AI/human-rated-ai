@@ -2,6 +2,7 @@ package human.rated.ai
 
 import skip.lib.*
 import skip.model.*
+import skip.firebase.core.FirebaseApp
 import skip.foundation.*
 import skip.ui.*
 
@@ -30,6 +31,8 @@ open class AndroidAppMain: Application {
         super.onCreate()
         logger.info("starting app")
         ProcessInfo.launch(applicationContext)
+        FirebaseApp.configure()
+        logger.info("FirebaseApp configured")
     }
 
     companion object {
