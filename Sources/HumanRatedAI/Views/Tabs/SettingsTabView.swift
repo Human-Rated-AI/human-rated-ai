@@ -90,7 +90,7 @@ private extension SettingsTabView {
     }
     
     var appVersion: String {
-#if SKIP
+#if os(Android)
         // Asked for help https://github.com/orgs/skiptools/discussions/223
         let context = ProcessInfo.processInfo.androidContext
         let displayName = "Hurated AI"
@@ -109,7 +109,7 @@ private extension SettingsTabView {
     }
     
     var deviceModel: String {
-#if SKIP
+#if os(Android)
         let deviceBrand = android.os.Build.MANUFACTURER
         let deviceModel = android.os.Build.MODEL
         let deviceName = android.os.Build.DEVICE
@@ -124,7 +124,7 @@ private extension SettingsTabView {
     }
     
     var osVersion: String {
-#if SKIP
+#if os(Android)
         "Android \(android.os.Build.VERSION.RELEASE)"
 #else
         let device = UIDevice.current
@@ -133,7 +133,7 @@ private extension SettingsTabView {
     }
 }
 
-#if !SKIP
+#if !os(Android)
 // https://stackoverflow.com/a/68912269/7851379
 private extension Bundle {
     var appBuild: String { getInfo("CFBundleVersion") }

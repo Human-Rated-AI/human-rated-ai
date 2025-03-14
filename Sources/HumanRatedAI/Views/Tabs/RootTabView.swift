@@ -25,7 +25,7 @@ public struct RootTabView: View {
                 if authManager.isAuthenticated {
                     CreateTabView()
                 } else {
-                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To create AI bots")
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "to create AI bots")
                 }
             }
             .tabItem { Label("Create", systemImage: "plus") }
@@ -37,7 +37,7 @@ public struct RootTabView: View {
                     Text("Favorite AI Bots")
                         .font(.largeTitle)
                 } else {
-                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To view your favorites")
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "to view your favorites")
                 }
             }
             .tabItem { Label("Favs", systemImage: "star") }
@@ -48,7 +48,7 @@ public struct RootTabView: View {
                 if authManager.isAuthenticated {
                     SettingsTabView(appearance: $appearance)
                 } else {
-                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "To manage the settings")
+                    NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "to manage the settings")
                 }
             }
             .tabItem { Label("Settings", systemImage: "gearshape") }

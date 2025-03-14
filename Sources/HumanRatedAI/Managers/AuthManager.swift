@@ -9,16 +9,13 @@
 //  Created by Denis Bystruev on 3/2/25.
 //
 
-#if !SKIP
-import AuthenticationServices
-#endif
-import SwiftUI
-
-#if SKIP
+#if os(Android)
 import SkipFirebaseAuth
 #else
+import AuthenticationServices
 import FirebaseAuth
 #endif
+import SwiftUI
 
 class AuthManager: ObservableObject {
     @Published var isAuthenticated: Bool = false
@@ -29,7 +26,7 @@ class AuthManager: ObservableObject {
     static let shared = AuthManager()
     
     private init() {
-#if !SKIP
+#if !os(Android)
         // Listen for authentication state changes
         _ = Auth.auth().addStateDidChangeListener { [weak self] _, authUser in
             DispatchQueue.main.async {
@@ -74,7 +71,7 @@ class AuthManager: ObservableObject {
         isAuthenticating = true
         errorMessage = ""
         
-#if SKIP
+#if os(Android)
         // Android implementation
         // Use Google Sign-In as fallback on Android
         signInWithGoogle()
@@ -113,7 +110,7 @@ class AuthManager: ObservableObject {
         isAuthenticating = true
         errorMessage = ""
         
-#if SKIP
+#if os(Android)
         // Android implementation
         Task { @MainActor in
             isAuthenticating = false
@@ -135,7 +132,7 @@ class AuthManager: ObservableObject {
 }
 
 extension AuthManager {
-#if !SKIP
+#if !os(Android)
     func handleSuccessfulLogin(with authorization: ASAuthorization) {
         let userCredential = authorization.credential as? ASAuthorizationAppleIDCredential
         let displayName = userCredential?.fullName?.formatted()

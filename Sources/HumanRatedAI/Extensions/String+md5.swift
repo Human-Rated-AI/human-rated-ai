@@ -9,14 +9,14 @@
 //  Created by Denis Bystruev on 9/22/24.
 //
 
-#if !SKIP
+#if !os(Android)
 import CryptoKit
 #endif
 import Foundation
 
 extension String {
     var md5: String {
-#if SKIP
+#if os(Android)
         // SKIP INSERT:
         // val md = java.security.MessageDigest.getInstance("MD5")
         // md.update(this.toByteArray(java.nio.charset.StandardCharsets.UTF_8))

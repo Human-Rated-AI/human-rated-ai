@@ -9,7 +9,7 @@
 //  Created by Denis Bystruev on 3/2/25.
 //
 
-#if !SKIP
+#if !os(Android)
 import AuthenticationServices
 #endif
 import SwiftUI
@@ -18,17 +18,22 @@ struct AuthView: View {
     @Binding var showAuthSheet: Bool
     @EnvironmentObject var authManager: AuthManager
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+    
+    var isLandscape: Bool {
+        horizontalSizeClass == .regular && verticalSizeClass == .compact
+    }
+    
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("Welcome")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.top, 30)
-                
-                Text("Sign in to continue")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+            VStack(spacing: CGFloat(isLandscape ? 15 : 20)) {
+                if isLandscape {
+                    WelcomeView(alignment: .leading)
+                } else {
+                    WelcomeView(alignment: .center)
+                        .padding(.top, 30)
+                }
                 
                 if authManager.isAuthenticating {
                     // Show progress
@@ -39,48 +44,16 @@ struct AuthView: View {
                 Spacer()
                 
                 // Social sign-in buttons
-                VStack(spacing: 15) {
-#if !SKIP
-                    SignInWithAppleButton(.continue) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        switch result {
-                        case .success(let authorization):
-                            authManager.handleSuccessfulLogin(with: authorization)
-                            showAuthSheet = false
-                        case .failure(let error):
-                            authManager.handleLoginError(with: error)
-                        }
+                if isLandscape {
+                    HStack(spacing: 30) {
+                        SignInButtons(showAuthSheet: $showAuthSheet)
                     }
-                    .frame(height: 50)
-                    .padding()
-                    .disabled(authManager.isAuthenticating)
-#endif
-                    
-                    Button(action: {
-                        authManager.signInWithGoogle()
-                    }) {
-                        HStack {
-                            Image(systemName: "g.circle.fill")
-                                .font(.headline)
-                            Text("Continue with Google")
-                                .font(.headline)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-#if SKIP
-                        .background(Color.gray)
-                        .opacity(0.67)
-#else
-                        .background(Color(.systemGray6))
-#endif
-                        .cornerRadius(10)
-                    }
-                    .disabled(authManager.isAuthenticating)
+                } else {
+                    SignInButtons(showAuthSheet: $showAuthSheet)
                 }
-                .padding(.horizontal)
                 
                 if !authManager.errorMessage.isEmpty {
+                    Spacer()
                     Text(authManager.errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -103,5 +76,60 @@ struct AuthView: View {
                 authManager.errorMessage = ""
             }
         }
+    }
+}
+
+private struct SignInButtons: View {
+    @Binding var showAuthSheet: Bool
+    @EnvironmentObject var authManager: AuthManager
+    
+    // Social sign-in buttons
+    var body: some View {
+        // Apple button
+#if os(Android)
+        Button {
+            authManager.signInWithApple()
+        } label: {
+            BundledImage("Continue with Apple", withExtension: "pdf")
+        }
+        .frame(width: 300, height: 50)
+        .disabled(authManager.isAuthenticating)
+#else
+        SignInWithAppleButton(.continue) { request in
+            request.requestedScopes = [.fullName, .email]
+        } onCompletion: { result in
+            switch result {
+            case .success(let authorization):
+                authManager.handleSuccessfulLogin(with: authorization)
+                showAuthSheet = false
+            case .failure(let error):
+                authManager.handleLoginError(with: error)
+            }
+        }
+        .frame(width: 300, height: 50)
+        .disabled(authManager.isAuthenticating)
+#endif
+        
+        // Google button
+        Button {
+            authManager.signInWithGoogle()
+        } label: {
+            BundledImage("Continue with Google", withExtension: "pdf")
+        }
+        .frame(width: 300, height: 50)
+        .disabled(authManager.isAuthenticating)
+    }
+}
+
+private struct WelcomeView: View {
+    let alignment: Alignment
+    
+    var body: some View {
+        // \u{00A0} is non-breaking space to keep Human Rated together
+        Text("Welcome to Human\u{00A0}Rated AI")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .multilineTextAlignment(alignment == .center ? .center : .leading)
+            .frame(maxWidth: .infinity, alignment: alignment)
     }
 }

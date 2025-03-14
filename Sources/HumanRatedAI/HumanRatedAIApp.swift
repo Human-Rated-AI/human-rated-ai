@@ -17,7 +17,7 @@ let androidSDK = ProcessInfo.processInfo.environment["android.os.Build.VERSION.S
 /// The default implementation merely loads the `RootTabView` for the app and logs a message.
 public struct RootView : View {
     public init() {}
-
+    
     public var body: some View {
         RootTabView()
             .environmentObject(aiEnvironmentManager)
@@ -28,7 +28,7 @@ public struct RootView : View {
     }
 }
 
-#if !SKIP
+#if !os(Android)
 public protocol HumanRatedAIApp : App {
 }
 

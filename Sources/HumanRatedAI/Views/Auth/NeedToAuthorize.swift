@@ -15,30 +15,72 @@ struct NeedToAuthorize: View {
     @Binding var showAuthSheet: Bool
     var reason: String
     
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+    
+    var isLandscape: Bool {
+        horizontalSizeClass == .regular && verticalSizeClass == .compact
+    }
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "lock.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
-                .padding()
-            
-            Text("Sign In Required")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text(reason)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.gray)
+        Group {
+            if isLandscape {
+                // Horizontal layout
+                HStack(spacing: 30) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                        .padding()
+                    
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("Sign In Required")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        
+                        Text(reason)
+                            .multilineTextAlignment(.leading)
+                            .foregroundColor(.gray)
+                            .padding(.trailing)
+                        
+                        Button("Sign In") {
+                            showAuthSheet = true
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .padding()
+                }
                 .padding(.horizontal)
-            
-            Button("Sign In") {
-                showAuthSheet = true
+            } else {
+                // Vertical layout
+                VStack(spacing: 20) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray)
+                        .padding()
+                    
+                    Text("Sign In Required")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text(reason)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal)
+                    
+                    Button("Sign In") {
+                        showAuthSheet = true
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+                .padding()
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
         }
-        .padding()
     }
 }

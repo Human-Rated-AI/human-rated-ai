@@ -1,4 +1,4 @@
-# Human-Rated AI
+    # Human-Rated AI
 
 A cross-platform application built with [Skip](https://skip.tools) for rating and evaluating AI systems on both iOS and Android.
 
@@ -80,3 +80,5 @@ To run the application:
 ## License
 
 This software is free: you can redistribute and/or modify it under the terms of the GNU General Public License 3.0 as published by the Free Software Foundation https://fsf.org
+
+[Social Login Buttons](https://www.figma.com/community/file/945702178038082375) are licensed by [Dakoda](https://www.figma.com/@dakoda) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
