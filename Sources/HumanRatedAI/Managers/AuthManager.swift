@@ -14,6 +14,8 @@ import SkipFirebaseAuth
 #else
 import AuthenticationServices
 import FirebaseAuth
+import FirebaseCore
+import GoogleSignIn
 #endif
 import SwiftUI
 
@@ -76,54 +78,81 @@ class AuthManager: ObservableObject {
         // Use Google Sign-In as fallback on Android
         signInWithGoogle()
 #else
-        // iOS implementation using Apple Sign In
-        let provider = OAuthProvider(providerID: "apple.com")
-        provider.getCredentialWith(nil) { credential, error in
-            if let error {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
-                    self.isAuthenticating = false
-                }
-                return
-            }
-            
-            if let credential {
-                Auth.auth().signIn(with: credential) { _, error in
-                    DispatchQueue.main.async {
-                        self.isAuthenticating = false
-                        if let error {
-                            self.errorMessage = error.localizedDescription
-                        }
-                    }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Could not get credentials"
-                    self.isAuthenticating = false
-                }
-            }
-        }
+        // iOS implementation should use SignInWithAppleButton
+        handleLoginError("Should be implemeted on iOS using SignInWithAppleButton")
 #endif
     }
     
-    func signInWithGoogle() {
+    func signInWithGoogle(completion: (() -> Void)? = nil) {
         isAuthenticating = true
         errorMessage = ""
         
 #if os(Android)
         // Android implementation
         Task { @MainActor in
-            isAuthenticating = false
-            errorMessage = "Not implemented"
+            handleLoginError("Not implemented")
         }
 #else
         // iOS implementation
-        let credential = GoogleAuthProvider.credential(withIDToken: "", accessToken: "")
-        Auth.auth().signIn(with: credential) { authResult, error in
+        // Get Google Sign In configuration
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
             DispatchQueue.main.async {
-                self.isAuthenticating = false
+                self.handleLoginError("Firebase configuration error")
+            }
+            return
+        }
+        
+        // Create Google Sign In configuration
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        
+        // Start the sign in flow
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            DispatchQueue.main.async {
+                self.handleLoginError("No root view controller found")
+            }
+            return
+        }
+        
+        // Sign in with Google
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { [weak self] result, error in
+            guard let self else { return }
+            
+            DispatchQueue.main.async {
                 if let error {
-                    self.errorMessage = error.localizedDescription
+                    self.handleLoginError(with: error)
+                    return
+                }
+                
+                guard let user = result?.user,
+                      let idToken = user.idToken?.tokenString else {
+                    self.handleLoginError("Failed to get user data from Google")
+                    return
+                }
+                
+                // Create Firebase credential with Google ID token
+                let credential = GoogleAuthProvider.credential(withIDToken: idToken,
+                                                               accessToken: user.accessToken.tokenString)
+                
+                // Sign in with Firebase
+                Auth.auth().signIn(with: credential) { authResult, error in
+                    DispatchQueue.main.async {
+                        self.isAuthenticating = false
+                        if let error {
+                            self.handleLoginError(with: error)
+                        } else if let authResult {
+                            // Save user information
+                            self.handleSuccessfulLogin(displayName: authResult.user.displayName,
+                                                       email: authResult.user.email,
+                                                       uid: authResult.user.uid)
+                            
+                            // Call completion handler if provided
+                            completion?()
+                        } else {
+                            self.handleLoginError("Unknown error occurred while signing in")
+                        }
+                    }
                 }
             }
         }
@@ -147,10 +176,14 @@ extension AuthManager {
         user = User(displayName: displayName, email: email, uid: uid)
     }
     
-    func handleLoginError(with error: Error) {
-        errorMessage = error.localizedDescription
+    func handleLoginError(_ message: String) {
+        errorMessage = message
         isAuthenticated = false
         isAuthenticating = false
         user = nil
+    }
+    
+    func handleLoginError(with error: Error) {
+        handleLoginError(error.localizedDescription)
     }
 }

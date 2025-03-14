@@ -3,6 +3,7 @@
 // as published by the Free Software Foundation https://fsf.org
 
 import FirebaseCore
+import GoogleSignIn
 import HumanRatedAI
 import SwiftUI
 
@@ -17,5 +18,19 @@ class FireSideAppDelegate : NSObject, UIApplicationDelegate {
         FirebaseApp.configure()
         print("INFO", #line, Self.self, #function, "FirebaseApp configured")
         return true
+    }
+    
+    // Handle URL scheme callback for Google Sign In
+    func application(_ app: UIApplication,
+                     open url: URL,
+                     options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        // Handle Google Sign In callback
+        if GIDSignIn.sharedInstance.handle(url) {
+            print("INFO", #line, Self.self, #function, "Google Sign In URL handled")
+            return true
+        }
+        
+        print("WARNING", #line, Self.self, #function, "URL not handled: \(url)")
+        return false
     }
 }

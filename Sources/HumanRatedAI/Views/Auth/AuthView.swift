@@ -75,6 +75,7 @@ struct AuthView: View {
             .onAppear {
                 authManager.errorMessage = ""
             }
+
         }
     }
 }
@@ -112,7 +113,9 @@ private struct SignInButtons: View {
         
         // Google button
         Button {
-            authManager.signInWithGoogle()
+            authManager.signInWithGoogle() {
+                showAuthSheet = false
+            }
         } label: {
             BundledImage("Continue with Google", withExtension: "pdf")
         }
