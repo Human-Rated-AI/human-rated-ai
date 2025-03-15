@@ -174,7 +174,7 @@ extension AuthManager {
         }
         
         // Create Firebase credential with Apple ID token
-        let credential = OAuthProvider.credential(providerID: .apple,  // Use enum instead of string
+        let credential = OAuthProvider.credential(providerID: .apple,
                                                   idToken: tokenString,
                                                   rawNonce: nonce)
         
@@ -184,14 +184,40 @@ extension AuthManager {
             
             DispatchQueue.main.async {
                 self.isAuthenticating = false
-                if let error = error {
+                if let error {
                     self.handleLoginError(with: error)
-                } else if let authResult = authResult {
-                    // Save user information
+                } else if let authResult {
+                    let firebaseUser = authResult.user
+                    
+                    // Check if we need to update the profile (first-time login)
                     let displayName = appleIDCredential.fullName?.formatted()
-                    self.handleSuccessfulLogin(displayName: displayName,
-                                               email: appleIDCredential.email,
-                                               uid: authResult.user.uid) // Use Firebase UID
+                    let email = appleIDCredential.email
+                    
+                    // If we have name/email from Apple and Firebase profile is empty, update it
+                    if (displayName != nil || email != nil) &&
+                        (firebaseUser.displayName == nil || firebaseUser.displayName?.isEmpty == true) {
+                        
+                        let changeRequest = firebaseUser.createProfileChangeRequest()
+                        if let displayName {
+                            changeRequest.displayName = displayName
+                        }
+                        
+                        changeRequest.commitChanges { [weak self] error in
+                            if let error {
+                                print("FAIL", #line, Self.self, #function,
+                                      "Failed to update user profile: \(error.localizedDescription)")
+                            }
+                            // Save user information in your app
+                            self?.handleSuccessfulLogin(displayName: firebaseUser.displayName,
+                                                        email: firebaseUser.email ?? email,
+                                                        uid: firebaseUser.uid)
+                        }
+                    } else {
+                        // No profile update needed, just handle the login
+                        self.handleSuccessfulLogin(displayName: firebaseUser.displayName,
+                                                   email: firebaseUser.email ?? email,
+                                                   uid: firebaseUser.uid)
+                    }
                 } else {
                     self.handleLoginError("Unknown error occurred while signing in")
                 }
