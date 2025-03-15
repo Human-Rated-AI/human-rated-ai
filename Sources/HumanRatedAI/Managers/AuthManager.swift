@@ -11,10 +11,12 @@
 
 #if os(Android)
 import SkipFirebaseAuth
+import SkipFirebaseFirestore
 #else
 import AuthenticationServices
 import FirebaseAuth
 import FirebaseCore
+import FirebaseFirestore
 import GoogleSignIn
 #endif
 import SwiftUI
@@ -207,14 +209,14 @@ extension AuthManager {
                                 print("FAIL", #line, Self.self, #function,
                                       "Failed to update user profile: \(error.localizedDescription)")
                             }
-                            // Save user information in your app
+                            // Save user information in the app
                             self?.handleSuccessfulLogin(displayName: firebaseUser.displayName,
                                                         email: firebaseUser.email ?? email,
                                                         uid: firebaseUser.uid)
                         }
                     } else {
-                        // No profile update needed, just handle the login
-                        self.handleSuccessfulLogin(displayName: firebaseUser.displayName,
+                        // Handle the login
+                        self.handleSuccessfulLogin(displayName: firebaseUser.displayName ?? displayName,
                                                    email: firebaseUser.email ?? email,
                                                    uid: firebaseUser.uid)
                     }
@@ -229,11 +231,13 @@ extension AuthManager {
     }
 #endif
     
-    func handleSuccessfulLogin(displayName: String?, email: String?, uid: String?) {
+    func handleSuccessfulLogin(displayName: String?, email: String?, uid: String) {
         errorMessage = ""
         isAuthenticated = true
         isAuthenticating = false
         user = User(displayName: displayName, email: email, uid: uid)
+        // Update Firestore document
+        updateUserInFirestore(uid: uid, displayName: displayName, email: email)
     }
     
     func handleLoginError(_ message: String) {
@@ -295,4 +299,43 @@ extension AuthManager {
         return nonce
     }
 #endif
+    
+    func updateUserInFirestore(uid: String, displayName: String?, email: String?) {
+        // Skip if no data to update
+        guard displayName != nil || email != nil else { return }
+        
+        // Base fields for updates (same for new or existing users)
+        var userData: [String: Any] = [
+            "lastSignInTime": FieldValue.serverTimestamp()
+        ]
+        
+        // Only add fields that are not nil
+        if let displayName {
+            userData["displayName"] = displayName
+        }
+        
+        if let email {
+            userData["email"] = email
+        }
+        
+        // For new users, these additional fields might be needed
+        // We don't know if this is a new user, so we'll include them
+        // The merge option will only add them if the document doesn't exist
+        userData["creationTime"] = FieldValue.serverTimestamp()
+        userData["signupTimestamp"] = FieldValue.serverTimestamp()
+        userData["providerId"] = "firebase"
+        userData["isAnonymous"] = false
+        userData["emailVerified"] = true // Assume Apple emails are verified
+        
+        // Update or create Firestore document
+        // Using setData with merge:true works cross-platform and handles both create/update
+        Task {
+            do {
+                let db = Firestore.firestore()
+                try await db.collection("users").document(uid).setData(userData, merge: true)
+            } catch {
+                print("FAIL", Self.self, "Error updating user data: \(error.localizedDescription)")
+            }
+        }
+    }
 }
