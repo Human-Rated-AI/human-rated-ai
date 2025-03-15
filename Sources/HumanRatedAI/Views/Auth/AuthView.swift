@@ -75,7 +75,7 @@ struct AuthView: View {
             .onAppear {
                 authManager.errorMessage = ""
             }
-
+            
         }
     }
 }
@@ -98,6 +98,9 @@ private struct SignInButtons: View {
 #else
         SignInWithAppleButton(.continue) { request in
             request.requestedScopes = [.fullName, .email]
+            // Set the nonce for the sign-in request
+            let nonce = authManager.startSignInWithApple()
+            request.nonce = nonce.sha256 // Use SHA256 instead of MD5
         } onCompletion: { result in
             switch result {
             case .success(let authorization):

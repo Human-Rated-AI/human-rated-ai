@@ -25,6 +25,8 @@ class AuthManager: ObservableObject {
     @Published var errorMessage: String = ""
     @Published var user: User?
     
+    /// Current nonce for Apple Sign In
+    private var currentNonce: String?
     static let shared = AuthManager()
     
     private init() {
@@ -163,9 +165,41 @@ class AuthManager: ObservableObject {
 extension AuthManager {
 #if !os(Android)
     func handleSuccessfulLogin(with authorization: ASAuthorization) {
-        let userCredential = authorization.credential as? ASAuthorizationAppleIDCredential
-        let displayName = userCredential?.fullName?.formatted()
-        handleSuccessfulLogin(displayName: displayName, email: userCredential?.email, uid: userCredential?.user)
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let identityToken = appleIDCredential.identityToken,
+              let tokenString = String(data: identityToken, encoding: .utf8),
+              let nonce = currentNonce else {
+            handleLoginError("Failed to get Apple identity token or nonce")
+            return
+        }
+        
+        // Create Firebase credential with Apple ID token
+        let credential = OAuthProvider.credential(providerID: .apple,  // Use enum instead of string
+                                                  idToken: tokenString,
+                                                  rawNonce: nonce)
+        
+        // Sign in with Firebase
+        Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isAuthenticating = false
+                if let error = error {
+                    self.handleLoginError(with: error)
+                } else if let authResult = authResult {
+                    // Save user information
+                    let displayName = appleIDCredential.fullName?.formatted()
+                    self.handleSuccessfulLogin(displayName: displayName,
+                                               email: appleIDCredential.email,
+                                               uid: authResult.user.uid) // Use Firebase UID
+                } else {
+                    self.handleLoginError("Unknown error occurred while signing in")
+                }
+            }
+        }
+        
+        // Clear the stored nonce
+        currentNonce = nil
     }
 #endif
     
@@ -177,6 +211,11 @@ extension AuthManager {
     }
     
     func handleLoginError(_ message: String) {
+#if os(Android)
+        print("FAIL", Self.self, "Login error: \(message)")
+#else
+        print("FAIL", #line, Self.self, #function, "Login error: \(message)")
+#endif
         errorMessage = message
         isAuthenticated = false
         isAuthenticating = false
@@ -186,4 +225,48 @@ extension AuthManager {
     func handleLoginError(with error: Error) {
         handleLoginError(error.localizedDescription)
     }
+    
+#if !os(Android)
+    // Adapted from Firebase documentation
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+        
+        while remainingLength > 0 {
+            let randoms: [UInt8] = (0 ..< 16).map { _ in
+                var random: UInt8 = 0
+                let errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+                if errorCode != errSecSuccess {
+                    fatalError("Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)")
+                }
+                return random
+            }
+            
+            randoms.forEach { random in
+                if remainingLength == 0 {
+                    return
+                }
+                
+                if random < charset.count {
+                    result.append(charset[Int(random)])
+                    remainingLength -= 1
+                }
+            }
+        }
+        
+        return result
+    }
+    
+    func startSignInWithApple() -> String {
+        isAuthenticating = true
+        errorMessage = ""
+        
+        // Generate a new nonce for this sign-in attempt
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        return nonce
+    }
+#endif
 }
