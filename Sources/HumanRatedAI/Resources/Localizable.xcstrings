@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Add some from the AI tab!" : {
+
+    },
     "AI" : {
 
     },
@@ -45,6 +48,9 @@
 
     },
     "Cancel" : {
+
+    },
+    "Chat with %@" : {
 
     },
     "Create" : {
@@ -253,6 +259,9 @@
           }
         }
       }
+    },
+    "No favorites yet." : {
+
     },
     "Powered by %@" : {
       "extractionState" : "stale",
