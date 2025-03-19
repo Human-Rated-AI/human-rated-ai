@@ -12,6 +12,8 @@
 
 import SwiftUI
 
+// Import our reusable component
+
 struct FavsTabView: View {
     @State private var favoriteBots: [AISetting] = [
         AISetting(creatorID: 1,
@@ -48,71 +50,13 @@ struct FavsTabView: View {
                 .background(Color.black)
                 .navigationTitle("Favorite AI Bots")
             } else {
-                List {
-                    ForEach(favoriteBots, id: \.name) { bot in
-                        NavigationLink(destination: Text("Chat with \(bot.name)")) { // Placeholder destination
-                            HStack(spacing: 15) {
-                                // Image or placeholder
-                                if let imageURL = bot.imageURL {
-                                    AsyncImage(url: imageURL) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 50, height: 50)
-                                            .clipShape(Circle())
-                                    } placeholder: {
-                                        ProgressView()
-                                            .frame(width: 50, height: 50)
-                                    }
-                                } else {
-                                    Image(systemName: "person.circle.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 50, height: 50)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                // Bot details
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(bot.name)
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    Text(bot.desc ?? "No description available")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                    // Rating
-                                    HStack(spacing: 3) {
-                                        let rating = ratings[bot.name] ?? Double(0)
-                                        ForEach(1...5, id: \.self) { star in
-                                            let fullStars = Int(rating)
-                                            let fraction = rating - Double(fullStars)
-                                            Image(systemName: star <= fullStars ? "star.fill" : (Double(star - 1) < rating && rating < Double(star) && 0.49999 < fraction) ? "star.leadinghalf.fill" : "star")
-                                                .foregroundColor(.yellow)
-                                                .font(.caption)
-                                        }
-                                        Text(String(format: "%.1f", rating))
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                // Remove from favorites button
-                                Button(action: {
-                                    favoriteBots.removeAll { $0.name == bot.name }
-                                }) {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.yellow)
-                                        .font(.body)
-                                }
-                            }
-                            .padding(.vertical, 5)
-                        }
+                AIBotListView(
+                    bots: favoriteBots,
+                    ratings: ratings,
+                    onRemoveFavorite: { bot in
+                        favoriteBots.removeAll { $0.name == bot.name }
                     }
-                }
-                .listStyle(.plain)
-                .background(Color.black)
+                )
                 .navigationTitle("Favorite AI Bots")
             }
         }
