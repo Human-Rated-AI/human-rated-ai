@@ -23,16 +23,18 @@ struct AIBotListView: View {
                     HStack(spacing: 15) {
                         // Image or placeholder
                         if let imageURL = bot.imageURL {
-                            AsyncImage(url: imageURL) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 50, height: 50)
-                                    .clipShape(Circle())
+                            CachedImage(url: imageURL) { imageData in
+                                if let image = UIImage(data: imageData) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .scaledToFill()
+                                }
                             } placeholder: {
                                 ProgressView()
                                     .frame(width: 50, height: 50)
                             }
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
                         } else {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
@@ -61,8 +63,8 @@ struct AIBotListView: View {
                                     } else if Double(star - 1) < rating && rating < Double(star) && 0.49999 < fraction {
 #if os(Android)
                                         Image(systemName: "star.fill")
-                                            .font(.caption)
                                             .foregroundColor(.yellow)
+                                            .font(.caption)
 #else
                                         Image(systemName: "star.leadinghalf.fill")
                                             .foregroundColor(.yellow)
@@ -71,6 +73,7 @@ struct AIBotListView: View {
                                         Image(systemName: "star")
 #if os(Android)
                                             .foregroundColor(.gray)
+                                            .font(.caption)
 #else
                                             .foregroundColor(.yellow)
 #endif
