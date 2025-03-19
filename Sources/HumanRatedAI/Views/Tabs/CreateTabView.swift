@@ -25,7 +25,7 @@ struct CreateTabView: View {
                         if aiSetting.desc?.isEmpty != false {
                             Text("Description")
                                 .font(.body)
-#if !SKIP
+#if !os(Android)
                                 .foregroundColor(Color(.placeholderText))
                                 .padding(.top, 8)
 #else

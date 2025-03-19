@@ -44,6 +44,9 @@
     "Basic Information" : {
 
     },
+    "Cancel" : {
+
+    },
     "Create" : {
 
     },
@@ -154,7 +157,7 @@
     "Image" : {
 
     },
-    "Image Caption" : {
+    "Image Caption Instructions" : {
 
     },
     "Image URL" : {
@@ -216,6 +219,9 @@
           }
         }
       }
+    },
+    "Log Out" : {
+
     },
     "Models" : {
 
@@ -337,6 +343,12 @@
         }
       }
     },
+    "Sign In" : {
+
+    },
+    "Sign In Required" : {
+
+    },
     "Suffix Instructions" : {
 
     },
@@ -368,6 +380,9 @@
         }
       }
     },
+    "User" : {
+
+    },
     "Welcome" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -398,6 +413,9 @@
       }
     },
     "Welcome Message" : {
+
+    },
+    "Welcome to Human Rated AI" : {
 
     }
   },

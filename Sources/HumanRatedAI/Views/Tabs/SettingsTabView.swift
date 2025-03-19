@@ -14,6 +14,7 @@ import SwiftUI
 struct SettingsTabView: View {
     @Binding var appearance: String
     @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
+    @EnvironmentObject var authManager: AuthManager
     @State var errorMessage = ""
     @State var models = [String]()
     
@@ -22,6 +23,12 @@ struct SettingsTabView: View {
             List {
                 Section("App") {
                     ListSettingsView(list: [appVersion, deviceModel, osVersion])
+                }
+                if let user = authManager.user {
+                    Section("User") {
+                        ListSettingsView(list: [user.displayName?.nonEmptyTrimmed ?? "Name not shared",
+                                                user.email?.nonEmptyTrimmed ?? "E-mail not shared"])
+                    }
                 }
                 Section("Deployment") {
                     ListSettingsView(list: aiInfo)
@@ -45,6 +52,19 @@ struct SettingsTabView: View {
                         Text("Dark").tag("dark")
                     }
                 }
+                Section {
+                    if authManager.user != nil {
+                        Button("Log Out") {
+                            authManager.signOut()
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                }
+                .listRowBackground(Color.clear)
             }
         }
         .navigationTitle("Settings")
@@ -70,7 +90,7 @@ private extension SettingsTabView {
     }
     
     var appVersion: String {
-#if SKIP
+#if os(Android)
         // Asked for help https://github.com/orgs/skiptools/discussions/223
         let context = ProcessInfo.processInfo.androidContext
         let displayName = "Hurated AI"
@@ -89,7 +109,7 @@ private extension SettingsTabView {
     }
     
     var deviceModel: String {
-#if SKIP
+#if os(Android)
         let deviceBrand = android.os.Build.MANUFACTURER
         let deviceModel = android.os.Build.MODEL
         let deviceName = android.os.Build.DEVICE
@@ -104,7 +124,7 @@ private extension SettingsTabView {
     }
     
     var osVersion: String {
-#if SKIP
+#if os(Android)
         "Android \(android.os.Build.VERSION.RELEASE)"
 #else
         let device = UIDevice.current
@@ -113,7 +133,7 @@ private extension SettingsTabView {
     }
 }
 
-#if !SKIP
+#if !os(Android)
 // https://stackoverflow.com/a/68912269/7851379
 private extension Bundle {
     var appBuild: String { getInfo("CFBundleVersion") }

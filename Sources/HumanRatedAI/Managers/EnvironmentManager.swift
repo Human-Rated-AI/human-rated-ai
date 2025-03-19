@@ -85,7 +85,7 @@ private extension String {
         var index = startIndex
         while index < endIndex {
             if self[index] == "\"" {
-#if SKIP
+#if os(Android)
                 isInQuotes = !isInQuotes
 #else
                 isInQuotes.toggle()
