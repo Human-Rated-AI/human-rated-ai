@@ -9,3 +9,16 @@ build:
         - GIDSignInResult
         - GIDGoogleUser
         - Token
+    - block: 'dependencies'
+      contents:
+        - 'implementation("com.google.android.gms:play-services-auth:20.7.0")'
+        - 'implementation("com.google.firebase:firebase-auth:22.3.0")'
+        - 'implementation("com.google.firebase:firebase-core:21.1.1")'
+
+# Add resource placeholders
+resources:
+  contents:
+    - block: 'strings'
+      filename: 'res/values/strings.xml'
+      contents:
+        - '<string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID_HERE</string>'
