@@ -2,5 +2,4 @@
 // under the terms of the GNU General Public License 3.0
 // as published by the Free Software Foundation https://fsf.org
 
-public class HumanRatedAIModule {
-}
+public class HumanRatedAIModule {}

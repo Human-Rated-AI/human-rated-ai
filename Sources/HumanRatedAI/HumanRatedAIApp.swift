@@ -29,8 +29,7 @@ public struct RootView : View {
 }
 
 #if !os(Android)
-public protocol HumanRatedAIApp : App {
-}
+public protocol HumanRatedAIApp : App {}
 
 /// The entry point to the HumanRatedAI app.
 /// The concrete implementation is in the HumanRatedAIApp module.
@@ -40,5 +39,22 @@ public extension HumanRatedAIApp {
             RootView()
         }
     }
+}
+#endif
+
+#if os(Android)
+// adb logcat | grep System.out
+public func debug(_ items: Any..., separator: String = " ", terminator: String = "\n") {
+    print(items, separator: separator, terminator: terminator)
+}
+#else
+public func debug(_ items: Any...,
+                  file: String = #file,
+                  line: Int = #line,
+                  function: String = #function,
+                  separator: String = " ",
+                  terminator: String = "\n") {
+    let name = file.split(separator: "/").last?.split(separator: ".").first ?? ""
+    print("\(name):\(line) \(function)", items, separator: separator, terminator: terminator)
 }
 #endif
