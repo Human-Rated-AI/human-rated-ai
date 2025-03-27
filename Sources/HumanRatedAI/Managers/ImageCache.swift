@@ -88,11 +88,7 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
                     self.isLoading = false
                 }
             } catch {
-#if os(Android)
-                print("FAIL", Self.self, "loading image: \(error)")
-#else
-                print("FAIL", #line, Self.self, #function, "loading image: \(error)")
-#endif
+                debug("FAIL", Self.self, "loading image: \(error)")
                 await MainActor.run {
                     self.isLoading = false
                 }

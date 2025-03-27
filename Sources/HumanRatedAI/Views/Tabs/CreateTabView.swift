@@ -80,7 +80,7 @@ struct CreateTabView: View {
                 
                 Button("Create AI Bot") {
                     // TODO: Implement create action
-                    print("Creating AI Bot with settings: \(aiSetting)")
+                    debug("DEBUG", "Creating AI Bot with settings: \(aiSetting)")
                 }
                 .font(.body)
                 .frame(maxWidth: .infinity, alignment: .center)

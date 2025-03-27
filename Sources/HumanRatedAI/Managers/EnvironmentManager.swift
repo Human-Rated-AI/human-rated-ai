@@ -27,17 +27,20 @@ extension EnvironmentManager {
         static let aiKey = "AI_KEY"
         static let aiModel = "AI_MODEL"
         static let aiURL = "AI_URL"
+        static let oauthClientID = "OAUTH_CLIENT_ID"
+        static var all: [String] { [Keys.aiKey, Keys.aiModel, Keys.aiURL, Keys.oauthClientID] }
     }
     private static var _ai: EnvironmentManager?
     static var ai: EnvironmentManager {
         if let _ai { return _ai }
-        let _ai = EnvironmentManager(filename: "env", keys: [Keys.aiKey, Keys.aiModel, Keys.aiURL])
+        let _ai = EnvironmentManager(filename: "env", keys: Keys.all)
         self._ai = _ai
         return _ai
     }
     var aiKey: String? { variables[Keys.aiKey] ?? nil }
     var aiModel: String? { variables[Keys.aiModel] ?? nil }
     var aiURL: URL? { (variables[Keys.aiURL] ?? nil)?.asURL }
+    var oauthClientID: String? { variables[Keys.oauthClientID] ?? nil }
 }
 
 private extension EnvironmentManager {
@@ -52,7 +55,7 @@ private extension EnvironmentManager {
         let lines = contents.split(separator: "\n")
         for line in lines {
             let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmedLine.hasPrefix("#") { continue }
+            if trimmedLine.hasPrefix("#") || trimmedLine.isEmpty { continue }
             if let rangeOfEquals = trimmedLine.rangeOfUnquotedString("=") {
                 let keyPart = String(trimmedLine[..<rangeOfEquals.lowerBound])
                 let valuePart = String(trimmedLine[rangeOfEquals.upperBound...])

@@ -16,7 +16,7 @@ class FireSideAppDelegate : NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
-        print("INFO", #line, Self.self, #function, "FirebaseApp configured")
+        debug("INFO", Self.self, "FirebaseApp configured")
         return true
     }
     
@@ -26,11 +26,11 @@ class FireSideAppDelegate : NSObject, UIApplicationDelegate {
                      options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // Handle Google Sign In callback
         if GIDSignIn.sharedInstance.handle(url) {
-            print("INFO", #line, Self.self, #function, "Google Sign In URL handled")
+            debug("INFO", Self.self, "Google Sign In URL handled")
             return true
         }
         
-        print("WARNING", #line, Self.self, #function, "URL not handled: \(url)")
+        debug("WARN", Self.self, "URL not handled: \(url)")
         return false
     }
 }

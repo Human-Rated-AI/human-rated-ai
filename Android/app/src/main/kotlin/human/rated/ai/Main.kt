@@ -8,6 +8,7 @@ import skip.ui.*
 
 import android.Manifest
 import android.app.Application
+import android.content.Intent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,14 @@ open class AndroidAppMain: Application {
 /// AndroidAppMain is initial `androidx.appcompat.app.AppCompatActivity`, and must match `activity android:name` in the AndroidMainfest.xml file.
 open class MainActivity: AppCompatActivity {
     constructor() {
+    }
+    
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        // Call the auth handler
+        MainActivityAuthHandler.handleActivityResult(this, requestCode, resultCode, data)
     }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {

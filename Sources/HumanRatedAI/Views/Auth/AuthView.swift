@@ -89,7 +89,9 @@ private struct SignInButtons: View {
         // Apple button
 #if os(Android)
         Button {
-            authManager.signInWithApple()
+            authManager.signInWithApple() {
+                showAuthSheet = false
+            }
         } label: {
             BundledImage("Continue with Apple", withExtension: "pdf")
         }
