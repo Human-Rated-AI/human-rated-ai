@@ -11,20 +11,23 @@
 
 import Foundation
 
-public struct AISetting: Codable {
-    var caption: String?    // "Please describe what you see on this picture..."
+public struct AISetting: Codable, Identifiable {
+    // Firestore document ID
+    public var id: String = UUID().uuidString
+    var caption: String?        // "Please describe what you see on this picture..."
     let creatorID: Int
     var desc: String?
     var imageURL: URL?
+    var isPublic: Bool = false  // Whether this setting is visible to all users
     var name: String
-    var prefix: String?     // "You are..."
+    var prefix: String?         // "You are..."
     var suffix: String?
-    var welcome: String?    // "\n\nWelcome!\n\nI’m your..."
+    var welcome: String?        // "\n\nWelcome!\n\nI’m your..."
     
     enum CodingKeys: String, CodingKey {
         case caption, creatorID
         case desc = "description"
-        case imageURL, name, prefix, suffix, welcome
+        case id, imageURL, isPublic, name, prefix, suffix, welcome
     }
 }
 
@@ -32,6 +35,7 @@ public typealias AISettings = [AISetting]
 
 public extension AISetting {
     mutating func update(_ key: String, with value: Any) {
+        let boolValue = value as? Bool
         let stringValue = value as? String
         switch AISetting.CodingKeys(rawValue: key) {
         case .caption:
@@ -42,6 +46,8 @@ public extension AISetting {
             desc = stringValue
         case .imageURL:
             imageURL = stringValue?.asURL
+        case .isPublic:
+            isPublic = boolValue ?? false
         case .name:
             guard let stringValue else { break }
             name = stringValue
