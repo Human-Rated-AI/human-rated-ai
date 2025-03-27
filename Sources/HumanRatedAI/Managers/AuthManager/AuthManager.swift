@@ -122,7 +122,7 @@ private extension AuthManager {
         Task {
             do {
                 let db = Firestore.firestore()
-                try await db.collection("users").document(uid).setData(userData, merge: true)
+                try await db.users.document(uid).setData(userData, merge: true)
             } catch {
                 debug("FAIL", Self.self, "Error updating user data: \(error.localizedDescription)")
             }

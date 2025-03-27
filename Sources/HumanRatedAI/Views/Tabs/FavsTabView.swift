@@ -13,13 +13,11 @@
 import SwiftUI
 
 struct FavsTabView: View {
-    @State private var favoriteBots: [AISetting] = [
-        AISetting(creatorID: 1,
-                  desc: "Your personal fashion stylist for minimalist looks",
+    @State private var favoriteBots: AISettings = [
+        AISetting(desc: "Your personal fashion stylist for minimalist looks",
                   imageURL: URL(string: "https://styles.redditmedia.com/t5_39er0/styles/communityIcon_rarwqqios5y51.png"),
                   name: "StyleSavvy AI"),
-        AISetting(creatorID: 3,
-                  desc: "Your guide to fitness and healthy living",
+        AISetting(desc: "Your guide to fitness and healthy living",
                   imageURL: URL(string: "https://is2-ssl.mzstatic.com/image/thumb/Purple114/v4/51/c6/0e/51c60e7e-c5af-6eef-c18d-7bc0b0bc7209/source/256x256bb.jpg"),
                   name: "FitnessPro AI")
     ]
