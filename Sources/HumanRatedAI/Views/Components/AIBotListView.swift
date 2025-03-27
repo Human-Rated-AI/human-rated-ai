@@ -13,7 +13,7 @@ import SwiftUI
 
 struct AIBotListView: View {
     @Environment(\.colorScheme) private var colorScheme
-    let bots: [AISetting]
+    let bots: AISettings
     let ratings: [String: Double]
     var onRemoveFavorite: ((AISetting) -> Void)? = nil
     

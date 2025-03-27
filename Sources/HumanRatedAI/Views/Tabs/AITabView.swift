@@ -14,17 +14,14 @@ import SwiftUI
 
 struct AITabView: View {
     // Sample data for the presentation (replace with real data from your backend)
-    let aiBots: [AISetting] = [
-        AISetting(creatorID: 1,
-                  desc: "Your personal fashion stylist for minimalist looks",
+    let aiBots: AISettings = [
+        AISetting(desc: "Your personal fashion stylist for minimalist looks",
                   imageURL: URL(string: "https://styles.redditmedia.com/t5_39er0/styles/communityIcon_rarwqqios5y51.png"),
                   name: "StyleSavvy AI"),
-        AISetting(creatorID: 2,
-                  desc: "Expert in tech trends and gadgets",
+        AISetting(desc: "Expert in tech trends and gadgets",
                   imageURL: nil,
                   name: "TechGuru AI"),
-        AISetting(creatorID: 3,
-                  desc: "Your guide to fitness and healthy living",
+        AISetting(desc: "Your guide to fitness and healthy living",
                   imageURL: URL(string: "https://is2-ssl.mzstatic.com/image/thumb/Purple114/v4/51/c6/0e/51c60e7e-c5af-6eef-c18d-7bc0b0bc7209/source/256x256bb.jpg"),
                   name: "FitnessPro AI")
     ]

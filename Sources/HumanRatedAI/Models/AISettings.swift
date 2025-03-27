@@ -15,7 +15,6 @@ public struct AISetting: Codable, Identifiable {
     // Firestore document ID
     public var id: String = UUID().uuidString
     var caption: String?        // "Please describe what you see on this picture..."
-    let creatorID: Int
     var desc: String?
     var imageURL: URL?
     var isPublic: Bool = false  // Whether this setting is visible to all users
@@ -25,7 +24,7 @@ public struct AISetting: Codable, Identifiable {
     var welcome: String?        // "\n\nWelcome!\n\nI’m your..."
     
     enum CodingKeys: String, CodingKey {
-        case caption, creatorID
+        case caption
         case desc = "description"
         case id, imageURL, isPublic, name, prefix, suffix, welcome
     }
@@ -40,8 +39,6 @@ public extension AISetting {
         switch AISetting.CodingKeys(rawValue: key) {
         case .caption:
             caption = stringValue
-        case .creatorID:
-            break
         case .desc:
             desc = stringValue
         case .imageURL:

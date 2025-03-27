@@ -12,7 +12,7 @@
 import SwiftUI
 
 struct CreateTabView: View {
-    @State private var aiSetting = AISetting(creatorID: 0, name: "")
+    @State private var aiSetting = AISetting(name: "")
     @State private var imageURLString: String = ""
     
     var body: some View {
