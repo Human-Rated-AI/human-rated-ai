@@ -57,6 +57,15 @@ public struct RootTabView: View {
         }
         .environmentObject(authManager)
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
+#if !os(Android)
+        .onAppear {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            // This ensures the tab bar has proper contrast in any mode
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
+#endif
     }
 }
 

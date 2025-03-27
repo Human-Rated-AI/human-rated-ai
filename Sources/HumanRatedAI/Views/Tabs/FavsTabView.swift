@@ -12,8 +12,6 @@
 
 import SwiftUI
 
-// Import our reusable component
-
 struct FavsTabView: View {
     @State private var favoriteBots: [AISetting] = [
         AISetting(creatorID: 1,

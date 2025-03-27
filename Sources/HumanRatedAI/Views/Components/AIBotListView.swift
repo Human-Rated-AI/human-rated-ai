@@ -12,6 +12,7 @@
 import SwiftUI
 
 struct AIBotListView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let bots: [AISetting]
     let ratings: [String: Double]
     var onRemoveFavorite: ((AISetting) -> Void)? = nil
@@ -47,7 +48,7 @@ struct AIBotListView: View {
                         VStack(alignment: .leading, spacing: 5) {
                             Text(bot.name)
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
                             Text(bot.desc ?? "No description available")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
@@ -103,6 +104,6 @@ struct AIBotListView: View {
             }
         }
         .listStyle(.plain)
-        .background(Color.black)
+        .background(colorScheme == .dark ? Color.black : Color.white)
     }
 }
