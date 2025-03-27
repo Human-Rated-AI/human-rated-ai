@@ -229,6 +229,9 @@
     "Log Out" : {
 
     },
+    "Make Public" : {
+
+    },
     "Models" : {
 
     },
@@ -261,6 +264,9 @@
       }
     },
     "No favorites yet." : {
+
+    },
+    "OK" : {
 
     },
     "Powered by %@" : {
@@ -358,6 +364,9 @@
     "Sign In Required" : {
 
     },
+    "Success" : {
+
+    },
     "Suffix Instructions" : {
 
     },
@@ -425,6 +434,9 @@
 
     },
     "Welcome to Human Rated AI" : {
+
+    },
+    "Your AI Bot has been created successfully!" : {
 
     }
   },

@@ -23,6 +23,18 @@ public struct AISetting: Codable, Identifiable {
     var suffix: String?
     var welcome: String?        // "\n\nWelcome!\n\nI’m your..."
     
+    var trimmed: AISetting {
+        AISetting(id: id,
+                  caption: caption?.trimmed,
+                  desc: desc?.trimmed,
+                  imageURL: imageURL,
+                  isPublic: isPublic,
+                  name: name.trimmed,
+                  prefix: prefix?.trimmed,
+                  suffix: suffix?.trimmed,
+                  welcome: welcome?.trimmed)
+    }
+    
     enum CodingKeys: String, CodingKey {
         case caption
         case desc = "description"
