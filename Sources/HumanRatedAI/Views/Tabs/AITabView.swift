@@ -12,8 +12,6 @@
 
 import SwiftUI
 
-// Import our reusable component
-
 struct AITabView: View {
     // Sample data for the presentation (replace with real data from your backend)
     let aiBots: [AISetting] = [
