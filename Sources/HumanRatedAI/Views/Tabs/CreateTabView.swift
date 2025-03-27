@@ -152,7 +152,7 @@ private extension CreateTabView {
         aiSetting.id = UUID().uuidString
         Task {
             do {
-                let documentID = try await FirestoreManager.shared.saveAISetting(aiSetting.trimmed, userID: user.uid)
+                let documentID = try await FirestoreManager.shared.saveAISetting(aiSetting, userID: user.uid)
                 await MainActor.run {
                     aiSetting.id = documentID
                     isSaving = false

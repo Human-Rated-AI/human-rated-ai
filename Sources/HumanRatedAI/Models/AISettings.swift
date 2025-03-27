@@ -25,14 +25,14 @@ public struct AISetting: Codable, Identifiable {
     
     var trimmed: AISetting {
         AISetting(id: id,
-                  caption: caption?.trimmed,
-                  desc: desc?.trimmed,
+                  caption: caption?.nonEmptyTrimmed,
+                  desc: desc?.nonEmptyTrimmed,
                   imageURL: imageURL,
                   isPublic: isPublic,
                   name: name.trimmed,
-                  prefix: prefix?.trimmed,
-                  suffix: suffix?.trimmed,
-                  welcome: welcome?.trimmed)
+                  prefix: prefix?.nonEmptyTrimmed,
+                  suffix: suffix?.nonEmptyTrimmed,
+                  welcome: welcome?.nonEmptyTrimmed)
     }
     
     enum CodingKeys: String, CodingKey {

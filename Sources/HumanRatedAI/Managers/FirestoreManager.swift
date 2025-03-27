@@ -32,6 +32,7 @@ public class FirestoreManager: ObservableObject {
     ///   - userID: The ID of the user creating the AI setting
     /// - Returns: The document ID of the saved AI setting
     public func saveAISetting(_ aiSetting: AISetting, userID: String) async throws -> String {
+        let aiSetting = aiSetting.trimmed
         var data: [String: Any] = [
             "createdAt": FieldValue.serverTimestamp(),
             AISetting.CodingKeys.isPublic.rawValue: aiSetting.isPublic,
