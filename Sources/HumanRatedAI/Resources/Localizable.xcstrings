@@ -53,6 +53,9 @@
     "Chat with %@" : {
 
     },
+    "Check back later or create your own!" : {
+
+    },
     "Create" : {
 
     },
@@ -94,6 +97,9 @@
 
     },
     "Error" : {
+
+    },
+    "Error Loading AI bots" : {
 
     },
     "Favorite AI Bots" : {
@@ -266,6 +272,9 @@
     "No favorites yet." : {
 
     },
+    "No public AI bots found" : {
+
+    },
     "OK" : {
 
     },
@@ -398,6 +407,9 @@
         }
       }
     },
+    "Try Again" : {
+
+    },
     "User" : {
 
     },
@@ -436,7 +448,7 @@
     "Welcome to Human Rated AI" : {
 
     },
-    "Your AI Bot has been created successfully!" : {
+    "Your AI bot has been created successfully!" : {
 
     }
   },

@@ -13,6 +13,7 @@
 import SwiftUI
 
 struct FavsTabView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var favoriteBots: AISettings = [
         AISetting(desc: "Your personal fashion stylist for minimalist looks",
                   imageURL: URL(string: "https://styles.redditmedia.com/t5_39er0/styles/communityIcon_rarwqqios5y51.png"),
@@ -37,7 +38,7 @@ struct FavsTabView: View {
                         .foregroundColor(.gray)
                     Text("No favorites yet.")
                         .font(.title2)
-                        .foregroundColor(.white)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                     Text("Add some from the AI tab!")
                         .font(.subheadline)
                         .foregroundColor(.gray)

@@ -13,30 +13,102 @@
 import SwiftUI
 
 struct AITabView: View {
-    // Sample data for the presentation (replace with real data from your backend)
-    let aiBots: AISettings = [
-        AISetting(desc: "Your personal fashion stylist for minimalist looks",
-                  imageURL: URL(string: "https://styles.redditmedia.com/t5_39er0/styles/communityIcon_rarwqqios5y51.png"),
-                  name: "StyleSavvy AI"),
-        AISetting(desc: "Expert in tech trends and gadgets",
-                  imageURL: nil,
-                  name: "TechGuru AI"),
-        AISetting(desc: "Your guide to fitness and healthy living",
-                  imageURL: URL(string: "https://is2-ssl.mzstatic.com/image/thumb/Purple114/v4/51/c6/0e/51c60e7e-c5af-6eef-c18d-7bc0b0bc7209/source/256x256bb.jpg"),
-                  name: "FitnessPro AI")
-    ]
-    
-    // Sample ratings (replace with real data)
-    let ratings: [String: Double] = [
-        "StyleSavvy AI": 4.5,
-        "TechGuru AI": 4.0,
-        "FitnessPro AI": 4.8
-    ]
+    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject var authManager: AuthManager
+    @State private var aiBots: AISettings = []
+    @State private var errorMessage = ""
+    @State private var isLoading = false
+    @State private var ratings: [String: Double] = [:]
+    @State private var userFavorites: [String] = []
     
     var body: some View {
         NavigationStack {
-            AIBotListView(bots: aiBots, ratings: ratings)
-                .navigationTitle("AI Bot List")
+            ZStack {
+                if aiBots.isEmpty && isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if errorMessage.isNotEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 60))
+                            .foregroundColor(.orange)
+                        Text("Error Loading AI bots")
+                            .font(.title2)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        Button("Try Again") {
+                            loadAIBots()
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if aiBots.isEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        Text("No public AI bots found")
+                            .font(.title2)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                        Text("Check back later or create your own!")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    AIBotListView(bots: aiBots, ratings: ratings, onAddToFavorite: { bot in
+                        addToFavorites(bot)
+                    })
+                }
+            }
+            .navigationTitle("AI Bot List")
+            .onAppear {
+                loadAIBots()
+            }
+        }
+    }
+}
+
+private extension AITabView {
+    func addToFavorites(_ bot: AISetting) {
+        
+    }
+    
+    func loadAIBots() {
+        if isLoading { return }
+        isLoading = true
+        errorMessage = ""
+        Task {
+            do {
+                // Get all public AI bots settings
+                let allSettings = try await FirestoreManager.shared.getAllPublicAISettings()
+                // Get ratings
+                let allRatings = try? await FirestoreManager.shared.getAllRatings()
+                // Get user favorites if logged in
+                if let user = authManager.user {
+                    let favorites = try await FirestoreManager.shared.getUserFavorites(userID: user.uid)
+                    await MainActor.run {
+                        userFavorites = favorites.map { $0.id }
+                    }
+                }
+                await MainActor.run {
+                    aiBots = allSettings
+                    ratings = allRatings ?? [:]
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    isLoading = false
+                }
+            }
         }
     }
 }

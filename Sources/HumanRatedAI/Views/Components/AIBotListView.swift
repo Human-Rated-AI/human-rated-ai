@@ -15,6 +15,7 @@ struct AIBotListView: View {
     @Environment(\.colorScheme) private var colorScheme
     let bots: AISettings
     let ratings: [String: Double]
+    var onAddToFavorite: ((AISetting) -> Void)? = nil
     var onRemoveFavorite: ((AISetting) -> Void)? = nil
     
     var body: some View {
@@ -71,11 +72,12 @@ struct AIBotListView: View {
                                             .foregroundColor(.yellow)
 #endif
                                     } else {
-                                        Image(systemName: "star")
 #if os(Android)
+                                        Image(systemName: "star.fill")
                                             .foregroundColor(.gray)
                                             .font(.caption)
 #else
+                                        Image(systemName: "star")
                                             .foregroundColor(.yellow)
 #endif
                                     }

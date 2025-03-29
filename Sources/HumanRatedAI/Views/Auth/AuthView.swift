@@ -17,7 +17,6 @@ import SwiftUI
 struct AuthView: View {
     @Binding var showAuthSheet: Bool
     @EnvironmentObject var authManager: AuthManager
-    
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     
