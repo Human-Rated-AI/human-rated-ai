@@ -119,7 +119,7 @@ struct CreateTabView: View {
                     resetForm()
                 }
             } message: {
-                Text("Your AI Bot has been created successfully!")
+                Text("Your AI bot has been created successfully!")
             }
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK") {}
@@ -139,12 +139,12 @@ private extension CreateTabView {
     
     func saveAIBot() {
         guard let user = authManager.user else {
-            errorMessage = "You must be logged in to create an AI Bot"
+            errorMessage = "You must be logged in to create an AI bot"
             showErrorAlert = true
             return
         }
         guard aiSetting.name.isNotEmptyTrimmed else {
-            errorMessage = "Please provide a name for your AI Bot"
+            errorMessage = "Please provide a name for your AI bot"
             showErrorAlert = true
             return
         }

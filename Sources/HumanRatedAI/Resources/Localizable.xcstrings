@@ -53,6 +53,9 @@
     "Chat with %@" : {
 
     },
+    "Check back later or create your own!" : {
+
+    },
     "Create" : {
 
     },
@@ -94,6 +97,9 @@
 
     },
     "Error" : {
+
+    },
+    "Error Loading AI bots" : {
 
     },
     "Favorite AI Bots" : {
@@ -235,6 +241,9 @@
     "Models" : {
 
     },
+    "My Bots" : {
+
+    },
     "Name" : {
       "localizations" : {
         "es" : {
@@ -262,6 +271,9 @@
           }
         }
       }
+    },
+    "No AI bots found" : {
+
     },
     "No favorites yet." : {
 
@@ -299,6 +311,9 @@
       }
     },
     "Prefix Instructions" : {
+
+    },
+    "Public Bots" : {
 
     },
     "Screen %lld" : {
@@ -398,6 +413,9 @@
         }
       }
     },
+    "Try Again" : {
+
+    },
     "User" : {
 
     },
@@ -436,7 +454,7 @@
     "Welcome to Human Rated AI" : {
 
     },
-    "Your AI Bot has been created successfully!" : {
+    "Your AI bot has been created successfully!" : {
 
     }
   },
