@@ -241,6 +241,9 @@
     "Models" : {
 
     },
+    "My Bots" : {
+
+    },
     "Name" : {
       "localizations" : {
         "es" : {
@@ -269,10 +272,10 @@
         }
       }
     },
-    "No favorites yet." : {
+    "No AI bots found" : {
 
     },
-    "No public AI bots found" : {
+    "No favorites yet." : {
 
     },
     "OK" : {
@@ -308,6 +311,9 @@
       }
     },
     "Prefix Instructions" : {
+
+    },
+    "Public Bots" : {
 
     },
     "Screen %lld" : {

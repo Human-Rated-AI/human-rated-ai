@@ -38,7 +38,7 @@ public struct RootTabView: View {
                     NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "to view your favorites")
                 }
             }
-            .tabItem { Label("Favs", systemImage: "star") }
+            .tabItem { Label("Favs", systemImage: "star.fill") }
             .tag(Tab.favs)
             
             // Settings Tab - requires authentication
