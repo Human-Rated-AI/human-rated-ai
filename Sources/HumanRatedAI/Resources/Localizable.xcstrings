@@ -44,6 +44,9 @@
         }
       }
     },
+    "Are you sure you want to delete %@? This action cannot be undone." : {
+
+    },
     "Basic Information" : {
 
     },
@@ -89,6 +92,12 @@
           }
         }
       }
+    },
+    "Delete" : {
+
+    },
+    "Delete Bot" : {
+
     },
     "Deployment" : {
 
@@ -427,6 +436,9 @@
           }
         }
       }
+    },
+    "TODO: Chat interface" : {
+
     },
     "Try Again" : {
 
