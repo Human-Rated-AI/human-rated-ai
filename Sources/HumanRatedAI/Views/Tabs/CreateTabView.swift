@@ -55,24 +55,34 @@ struct CreateTabView: View {
                         .padding(.horizontal, -4)
                         .frame(height: 100)
                     }
-                    
-                    Toggle("Make Public", isOn: $isPublic)
-                        .font(.body)
-                        .onChange(of: isPublic) { newValue in
-                            aiSetting.isPublic = newValue
-                            if newValue.isFalse {
-                                isOpenSource = false
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Make Public", isOn: $isPublic)
+                            .font(.body)
+                            .onChange(of: isPublic) { newValue in
+                                aiSetting.isPublic = newValue
+                                if newValue.isFalse {
+                                    isOpenSource = false
+                                }
                             }
-                        }
-                    
-                    Toggle("Open Source", isOn: $isOpenSource)
-                        .font(.body)
-                        .onChange(of: isOpenSource) { newValue in
-                            aiSetting.isOpenSource = newValue
-                            if newValue {
-                                isPublic = true
+                        Text("Everyone can use your bot")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 6)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Open Source", isOn: $isOpenSource)
+                            .font(.body)
+                            .onChange(of: isOpenSource) { newValue in
+                                aiSetting.isOpenSource = newValue
+                                if newValue {
+                                    isPublic = true
+                                }
                             }
-                        }
+                        Text("Everyone can see and copy your bot settings")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 6)
+                    }
                 }
                 
                 Section(header: Text("AI Configuration").font(.subheadline)) {
