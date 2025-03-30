@@ -28,7 +28,7 @@ struct AITabView: View {
                 if publicBots.isEmpty && userBots.isEmpty && isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if errorMessage.isNotEmpty {
+                } else if errorMessage.notEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 60))
@@ -65,7 +65,7 @@ struct AITabView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
-                        if !userBots.isEmpty {
+                        if userBots.isNotEmpty {
                             Section(header: Text("My Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: userBots,
@@ -81,7 +81,7 @@ struct AITabView: View {
                             }
                         }
                         
-                        if !publicBots.isEmpty {
+                        if publicBots.isNotEmpty {
                             Section(header: Text("Public Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: publicBots,
@@ -164,7 +164,7 @@ private extension AITabView {
                 await MainActor.run {
                     publicBots = allPublicSettings.filter { bot in
                         // Don't show bots in public section that are already in user's section
-                        !userBotsResult.contains { $0.id == bot.id }
+                        userBotsResult.contains(where: { $0.id == bot.id }).isFalse
                     }
                     userBots = userBotsResult
                     ratings = allRatings ?? [:]
@@ -181,7 +181,7 @@ private extension AITabView {
 }
 
 // Helper component to display the bot list in each section
-struct AIBotListSection: View {
+private struct AIBotListSection: View {
     let bots: AISettings
     let ratings: [String: Double]
     var onAddToFavorite: ((AISetting) -> Void)?
@@ -209,7 +209,7 @@ struct AIBotListSection: View {
 }
 
 // Bot row component
-struct AIBotRow: View {
+private struct AIBotRow: View {
     @Environment(\.colorScheme) private var colorScheme
     let bot: AISetting
     let rating: Double
@@ -242,12 +242,24 @@ struct AIBotRow: View {
             
             // Bot details
             VStack(alignment: .leading, spacing: 5) {
+                // Name and description
                 Text(bot.name)
                     .font(.headline)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
                 Text(bot.desc ?? "No description available")
                     .font(.subheadline)
                     .foregroundColor(.gray)
+                // Public and open source tags
+                HStack(spacing: 4) {
+                    if bot.isPublic {
+                        AIBotTag(color: .blue, text: "Public")
+                    } else {
+                        AIBotTag(color: .red, text: "Private")
+                    }
+                    if bot.isOpenSource {
+                        AIBotTag(color: .green, text: "Open")
+                    }
+                }
                 // Rating
                 HStack(spacing: 3) {
                     ForEach(1...5, id: \.self) { star in
@@ -299,5 +311,20 @@ struct AIBotRow: View {
             }
         }
         .padding(.vertical, 5)
+    }
+}
+
+private struct AIBotTag: View {
+    let color: Color
+    let text: String
+    
+    var body: some View {
+        Text(text)
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.2))
+            .foregroundColor(color)
+            .cornerRadius(4)
     }
 }

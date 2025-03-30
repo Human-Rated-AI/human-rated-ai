@@ -76,7 +76,7 @@ extension FirestoreManager {
     ///   - userID: The ID of the user creating the AI setting
     /// - Returns: The document ID of the saved AI setting
     public func saveAISetting(_ aiSetting: AISetting, userID: String) async throws -> String {
-        let data = prepareAISettingData(aiSetting, userID: userID, isUpdate: false)
+        let data = prepareAISettingData(aiSetting, userID: userID, isUpdating: false)
         // Save to Firestore
         let docRef = try await db.aiSettings.addDocument(data: data)
         return docRef.documentID
@@ -99,7 +99,7 @@ extension FirestoreManager {
                           code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Permission denied or AI Setting not found"])
         }
-        let updateData = prepareAISettingData(aiSetting, userID: userID, isUpdate: true)
+        let updateData = prepareAISettingData(aiSetting, userID: userID, isUpdating: true)
         // Update the document in Firestore
         try await docRef.updateData(updateData)
         return true
@@ -243,16 +243,21 @@ private extension FirestoreManager {
     func aiSettingFrom(document: DocumentSnapshot, withID id: String) -> AISetting? {
         let data = document.data() ?? [:]
         // Extract required fields
-        let isPublic = data[AISetting.CodingKeys.isPublic.rawValue] as? Bool
         guard let name = data[AISetting.CodingKeys.name.rawValue] as? String else { return nil }
         // Create AISetting object with the document ID
-        var aiSetting = AISetting(id: id, isPublic: isPublic ?? false, name: name)
+        var aiSetting = AISetting(id: id, name: name)
         // Set optional fields
         aiSetting.desc = data[AISetting.CodingKeys.desc.rawValue] as? String
         if let imageURLString = data[AISetting.CodingKeys.imageURL.rawValue] as? String {
             aiSetting.imageURL = URL(string: imageURLString)
         }
         aiSetting.caption = data[AISetting.CodingKeys.caption.rawValue] as? String
+        if let isOpenSource = data[AISetting.CodingKeys.isOpenSource.rawValue] as? Bool {
+            aiSetting.isOpenSource = isOpenSource
+        }
+        if let isPublic = data[AISetting.CodingKeys.isPublic.rawValue] as? Bool {
+            aiSetting.isPublic = isPublic
+        }
         aiSetting.prefix = data[AISetting.CodingKeys.prefix.rawValue] as? String
         aiSetting.suffix = data[AISetting.CodingKeys.suffix.rawValue] as? String
         aiSetting.welcome = data[AISetting.CodingKeys.welcome.rawValue] as? String
@@ -274,22 +279,23 @@ private extension FirestoreManager {
     ///   - userID: The ID of the user
     ///   - isUpdate: Whether this is for an update (true) or new document (false)
     /// - Returns: Dictionary with data for Firestore
-    func prepareAISettingData(_ aiSetting: AISetting, userID: String, isUpdate: Bool) -> [String: Any] {
+    func prepareAISettingData(_ aiSetting: AISetting, userID: String, isUpdating: Bool) -> [String: Any] {
         let aiSetting = aiSetting.trimmed
         var data: [String: Any] = [
-            AISetting.CodingKeys.isPublic.rawValue: aiSetting.isPublic,
             AISetting.CodingKeys.name.rawValue: aiSetting.name,
             "updatedAt": FieldValue.serverTimestamp()
         ]
         // Add creation-specific fields
-        if !isUpdate {
+        if isUpdating.isFalse {
             data["createdAt"] = FieldValue.serverTimestamp()
             data["userID"] = userID
         }
         // Handle optional fields
-        let optionalFields: [(key: AISetting.CodingKeys, value: String?)] = [
+        let optionalFields: [(key: AISetting.CodingKeys, value: Any?)] = [
             (.desc, aiSetting.desc),
             (.caption, aiSetting.caption),
+            (.isOpenSource, aiSetting.isOpenSource ? true : nil),
+            (.isPublic, aiSetting.isPublic ? true : nil),
             (.prefix, aiSetting.prefix),
             (.suffix, aiSetting.suffix),
             (.welcome, aiSetting.welcome)
@@ -297,7 +303,7 @@ private extension FirestoreManager {
         for (key, value) in optionalFields {
             if let value {
                 data[key.rawValue] = value
-            } else if isUpdate {
+            } else if isUpdating {
                 // Only delete fields if this is an update operation
                 data[key.rawValue] = FieldValue.delete()
             }
@@ -305,7 +311,7 @@ private extension FirestoreManager {
         // Handle image URL separately since it's a URL, not a String
         if let imageURL = aiSetting.imageURL?.absoluteString {
             data[AISetting.CodingKeys.imageURL.rawValue] = imageURL
-        } else if isUpdate {
+        } else if isUpdating {
             data[AISetting.CodingKeys.imageURL.rawValue] = FieldValue.delete()
         }
         return data

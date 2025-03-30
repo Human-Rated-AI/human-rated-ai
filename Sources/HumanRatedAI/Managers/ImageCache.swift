@@ -76,10 +76,8 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
     }
     
     private func loadImage() {
-        guard let url = url, !isLoading else { return }
-        
+        guard isLoading.isFalse, let url else { return }
         isLoading = true
-        
         Task {
             do {
                 let data = try await ImageCache.shared.loadImage(from: url)

@@ -33,14 +33,14 @@ struct SettingsTabView: View {
                 Section("Deployment") {
                     ListSettingsView(list: aiInfo)
                 }
-                if !errorMessage.isEmpty {
+                if errorMessage.notEmpty {
                     Section("Error") {
                         Text(errorMessage)
                             .foregroundStyle(.red)
                     }
                     
                 }
-                if !models.isEmpty {
+                if models.isNotEmpty {
                     Section("Models") {
                         ListSettingsView(list: models)
                     }

@@ -102,6 +102,12 @@
     "Error Loading AI bots" : {
 
     },
+    "Everyone can see and copy your bot settings" : {
+
+    },
+    "Everyone can use your bot" : {
+
+    },
     "Favorite AI Bots" : {
 
     },
@@ -281,6 +287,12 @@
     "OK" : {
 
     },
+    "Open" : {
+
+    },
+    "Open Source" : {
+
+    },
     "Powered by %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -311,6 +323,9 @@
       }
     },
     "Prefix Instructions" : {
+
+    },
+    "Public" : {
 
     },
     "Public Bots" : {
