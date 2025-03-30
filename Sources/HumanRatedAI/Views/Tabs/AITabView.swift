@@ -190,7 +190,7 @@ private struct AIBotListSection: View {
     
     var body: some View {
         ForEach(bots, id: \.id) { bot in
-            NavigationLink(destination: Text("Chat with \(bot.name)")) {
+            NavigationLink(destination: ChatView(bot: bot)) {
                 AIBotRow(
                     bot: bot,
                     rating: ratings[bot.id] ?? 0.0,
