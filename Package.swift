@@ -25,6 +25,7 @@ let package = Package(
                     .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
                     .product(name: "SkipFirebaseAuth", package: "skip-firebase"),
                     .product(name: "SkipFirebaseFirestore", package: "skip-firebase"),
+                    .product(name: "SkipFirebaseStorage", package: "skip-firebase"),
                     .product(name: "SkipUI", package: "skip-ui"),
                 ],
                 resources: [.process("Resources")], plugins: [.plugin(name: "skipstone", package: "skip")]),
