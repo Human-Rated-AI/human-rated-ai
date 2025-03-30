@@ -11,7 +11,12 @@
 import SwiftUI
 
 struct ChatView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authManager: AuthManager
+    @State private var deleteError: String?
+    @State private var isDeleting = false
     @State private var showDeleteAlert = false
+    @State private var showErrorAlert = false
     let bot: AISetting
     let isUserBot: Bool
     
@@ -30,11 +35,15 @@ struct ChatView: View {
         .alert("Delete Bot", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                // Delete action will be implemented later
-                debug("DEBUG", ChatView.self, "Confirmed delete action")
+                deleteBot()
             }
         } message: {
             Text("Are you sure you want to delete \(bot.name)? This action cannot be undone.")
+        }
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(deleteError ?? "Unknown error occurred")
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
@@ -47,6 +56,28 @@ struct ChatView: View {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
                     }
+                }
+            }
+        }
+    }
+}
+
+private extension ChatView {
+    private func deleteBot() {
+        guard let user = authManager.user else { return }
+        isDeleting = true
+        Task {
+            do {
+                try await FirestoreManager.shared.deleteAISetting(documentID: bot.id, userID: user.uid)
+                await MainActor.run {
+                    isDeleting = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isDeleting = false
+                    deleteError = error.localizedDescription
+                    showErrorAlert = true
                 }
             }
         }
