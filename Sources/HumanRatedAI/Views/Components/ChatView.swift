@@ -15,9 +15,10 @@ struct ChatView: View {
     
     var body: some View {
         VStack {
-            Text("Chat with \(bot.name)")
+            Text("TODO: Chat interface")
                 .font(.title)
                 .padding()
+                .frame(maxWidth: .infinity, alignment: .center)
             
             // Here you would add your chat interface components
             // For example, messages list, input field, etc.
@@ -25,5 +26,6 @@ struct ChatView: View {
             Spacer()
         }
         .navigationTitle(bot.name)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
