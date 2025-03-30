@@ -243,16 +243,21 @@ private extension FirestoreManager {
     func aiSettingFrom(document: DocumentSnapshot, withID id: String) -> AISetting? {
         let data = document.data() ?? [:]
         // Extract required fields
-        let isPublic = data[AISetting.CodingKeys.isPublic.rawValue] as? Bool
         guard let name = data[AISetting.CodingKeys.name.rawValue] as? String else { return nil }
         // Create AISetting object with the document ID
-        var aiSetting = AISetting(id: id, isPublic: isPublic ?? false, name: name)
+        var aiSetting = AISetting(id: id, name: name)
         // Set optional fields
         aiSetting.desc = data[AISetting.CodingKeys.desc.rawValue] as? String
         if let imageURLString = data[AISetting.CodingKeys.imageURL.rawValue] as? String {
             aiSetting.imageURL = URL(string: imageURLString)
         }
         aiSetting.caption = data[AISetting.CodingKeys.caption.rawValue] as? String
+        if let isOpenSource = data[AISetting.CodingKeys.isOpenSource.rawValue] as? Bool {
+            aiSetting.isOpenSource = isOpenSource
+        }
+        if let isPublic = data[AISetting.CodingKeys.isPublic.rawValue] as? Bool {
+            aiSetting.isPublic = isPublic
+        }
         aiSetting.prefix = data[AISetting.CodingKeys.prefix.rawValue] as? String
         aiSetting.suffix = data[AISetting.CodingKeys.suffix.rawValue] as? String
         aiSetting.welcome = data[AISetting.CodingKeys.welcome.rawValue] as? String
@@ -277,7 +282,6 @@ private extension FirestoreManager {
     func prepareAISettingData(_ aiSetting: AISetting, userID: String, isUpdate: Bool) -> [String: Any] {
         let aiSetting = aiSetting.trimmed
         var data: [String: Any] = [
-            AISetting.CodingKeys.isPublic.rawValue: aiSetting.isPublic,
             AISetting.CodingKeys.name.rawValue: aiSetting.name,
             "updatedAt": FieldValue.serverTimestamp()
         ]
@@ -287,9 +291,11 @@ private extension FirestoreManager {
             data["userID"] = userID
         }
         // Handle optional fields
-        let optionalFields: [(key: AISetting.CodingKeys, value: String?)] = [
+        let optionalFields: [(key: AISetting.CodingKeys, value: Any?)] = [
             (.desc, aiSetting.desc),
             (.caption, aiSetting.caption),
+            (.isOpenSource, aiSetting.isOpenSource ? true : nil),
+            (.isPublic, aiSetting.isPublic ? true : nil),
             (.prefix, aiSetting.prefix),
             (.suffix, aiSetting.suffix),
             (.welcome, aiSetting.welcome)

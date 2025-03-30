@@ -17,7 +17,8 @@ public struct AISetting: Codable, Identifiable {
     var caption: String?        // "Please describe what you see on this picture..."
     var desc: String?
     var imageURL: URL?
-    var isPublic: Bool = false  // Whether this setting is visible to all users
+    var isOpenSource = false    // True if bot settings are visible to all users
+    var isPublic = false        // True if this bot is visible to all users
     var name: String
     var prefix: String?         // "You are..."
     var suffix: String?
@@ -28,6 +29,7 @@ public struct AISetting: Codable, Identifiable {
                   caption: caption?.nonEmptyTrimmed,
                   desc: desc?.nonEmptyTrimmed,
                   imageURL: imageURL,
+                  isOpenSource: isOpenSource,
                   isPublic: isPublic,
                   name: name.trimmed,
                   prefix: prefix?.nonEmptyTrimmed,
@@ -38,7 +40,7 @@ public struct AISetting: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case caption
         case desc = "description"
-        case id, imageURL, isPublic, name, prefix, suffix, welcome
+        case id, imageURL, isOpenSource, isPublic, name, prefix, suffix, welcome
     }
 }
 
@@ -55,6 +57,8 @@ public extension AISetting {
             desc = stringValue
         case .imageURL:
             imageURL = stringValue?.asURL
+        case .isOpenSource:
+            isOpenSource = boolValue ?? false
         case .isPublic:
             isPublic = boolValue ?? false
         case .name:
