@@ -11,6 +11,7 @@
 import SwiftUI
 
 struct ChatView: View {
+    @State private var showDeleteAlert = false
     let bot: AISetting
     let isUserBot: Bool
     
@@ -26,14 +27,22 @@ struct ChatView: View {
             
             Spacer()
         }
-        .navigationTitle(bot.name)
+        .alert("Delete Bot", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                // Delete action will be implemented later
+                debug("DEBUG", ChatView.self, "Confirmed delete action")
+            }
+        } message: {
+            Text("Are you sure you want to delete \(bot.name)? This action cannot be undone.")
+        }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(bot.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if isUserBot {
                     Button(action: {
-                        // Delete action will be added later
-                        debug("DEBUG", ChatView.self, "Delete action")
+                        showDeleteAlert = true
                     }) {
                         Image(systemName: "trash")
                             .foregroundColor(.red)
