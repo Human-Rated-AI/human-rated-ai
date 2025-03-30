@@ -17,6 +17,8 @@ GENERATE_INFOPLIST_FILE = YES
 //INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities
 
 // iOS-specific Info.plist property keys
+INFOPLIST_KEY_NSCameraUsageDescription = "Please allow camera access to upload images of your AI bots";
+INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Please allow photo library access to upload images of your AI bots";
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphone*] = YES
 INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphone*] = YES
 INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphone*] = YES
