@@ -9,6 +9,7 @@
 //  Created by Denis Bystruev on 10/27/24.
 //
 
+import SkipKit
 import SwiftUI
 
 struct CreateTabView: View {
