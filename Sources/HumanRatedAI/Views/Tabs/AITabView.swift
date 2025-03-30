@@ -69,6 +69,7 @@ struct AITabView: View {
                             Section(header: Text("My Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: userBots,
+                                    isUserBotSection: true,
                                     ratings: ratings,
                                     onAddToFavorite: { bot in
                                         addToFavorites(bot)
@@ -85,6 +86,7 @@ struct AITabView: View {
                             Section(header: Text("Public Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: publicBots,
+                                    isUserBotSection: false,
                                     ratings: ratings,
                                     onAddToFavorite: { bot in
                                         addToFavorites(bot)
@@ -183,6 +185,7 @@ private extension AITabView {
 // Helper component to display the bot list in each section
 private struct AIBotListSection: View {
     let bots: AISettings
+    let isUserBotSection: Bool
     let ratings: [String: Double]
     var onAddToFavorite: ((AISetting) -> Void)?
     var onRemoveFavorite: ((AISetting) -> Void)?
@@ -190,7 +193,7 @@ private struct AIBotListSection: View {
     
     var body: some View {
         ForEach(bots, id: \.id) { bot in
-            NavigationLink(destination: ChatView(bot: bot)) {
+            NavigationLink(destination: ChatView(bot: bot, isUserBot: isUserBotSection)) {
                 AIBotRow(
                     bot: bot,
                     rating: ratings[bot.id] ?? 0.0,

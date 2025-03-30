@@ -12,6 +12,7 @@ import SwiftUI
 
 struct ChatView: View {
     let bot: AISetting
+    let isUserBot: Bool
     
     var body: some View {
         VStack {
@@ -27,5 +28,18 @@ struct ChatView: View {
         }
         .navigationTitle(bot.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isUserBot {
+                    Button(action: {
+                        // Delete action will be added later
+                        debug("DEBUG", ChatView.self, "Delete action")
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+        }
     }
 }
