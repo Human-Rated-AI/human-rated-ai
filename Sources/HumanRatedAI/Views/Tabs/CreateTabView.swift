@@ -177,10 +177,15 @@ struct CreateTabView: View {
                     
                     // Manual URL entry (fallback option)
                     TextField("Or enter image URL", text: $imageURLString)
+#if !os(Android)
+                        .disableAutocorrection(true)
+#endif
                         .font(.body)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
                         .onChange(of: imageURLString) { newValue in
-                            if newValue.notEmptyTrimmed {
-                                aiSetting.imageURL = URL(string: newValue)
+                            if let imageURL = URL(string: newValue), imageURL.canOpen {
+                                aiSetting.imageURL = imageURL
                                 // Clear selected image if URL is provided manually
                                 selectedImage = nil
                                 selectedMediaURL = nil
