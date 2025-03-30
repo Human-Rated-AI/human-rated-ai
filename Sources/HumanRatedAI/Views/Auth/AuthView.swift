@@ -51,7 +51,7 @@ struct AuthView: View {
                     SignInButtons(showAuthSheet: $showAuthSheet)
                 }
                 
-                if !authManager.errorMessage.isEmpty {
+                if authManager.errorMessage.notEmpty {
                     Spacer()
                     Text(authManager.errorMessage)
                         .foregroundColor(.red)

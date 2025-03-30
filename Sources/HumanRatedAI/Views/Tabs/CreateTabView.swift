@@ -15,6 +15,7 @@ struct CreateTabView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var aiSetting = AISetting(name: "")
     @State private var errorMessage = ""
+    @State private var isOpenSource = false
     @State private var isPublic = false
     @State private var isSaving = false
     @State private var imageURLString = ""
@@ -59,6 +60,18 @@ struct CreateTabView: View {
                         .font(.body)
                         .onChange(of: isPublic) { newValue in
                             aiSetting.isPublic = newValue
+                            if newValue.isFalse {
+                                isOpenSource = false
+                            }
+                        }
+                    
+                    Toggle("Open Source", isOn: $isOpenSource)
+                        .font(.body)
+                        .onChange(of: isOpenSource) { newValue in
+                            aiSetting.isOpenSource = newValue
+                            if newValue {
+                                isPublic = true
+                            }
                         }
                 }
                 
@@ -134,6 +147,7 @@ private extension CreateTabView {
     func resetForm() {
         aiSetting = AISetting(name: "")
         imageURLString = ""
+        isOpenSource = false
         isPublic = false
     }
     
@@ -143,7 +157,7 @@ private extension CreateTabView {
             showErrorAlert = true
             return
         }
-        guard aiSetting.name.isNotEmptyTrimmed else {
+        guard aiSetting.name.notEmptyTrimmed else {
             errorMessage = "Please provide a name for your AI bot"
             showErrorAlert = true
             return

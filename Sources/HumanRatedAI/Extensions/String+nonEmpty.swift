@@ -16,20 +16,20 @@ extension String {
         trimmed.isEmpty
     }
     
-    var isNotEmpty: Bool {
-        !isEmpty
-    }
-    
-    var isNotEmptyTrimmed: Bool {
-        trimmed.isNotEmpty
-    }
-    
     var nonEmpty: Self? {
         isEmpty ? nil : self
     }
     
     var nonEmptyTrimmed: String? {
         trimmed.nonEmpty
+    }
+    
+    var notEmpty: Bool {
+        !isEmpty
+    }
+    
+    var notEmptyTrimmed: Bool {
+        trimmed.notEmpty
     }
     
     var trimmed: String {

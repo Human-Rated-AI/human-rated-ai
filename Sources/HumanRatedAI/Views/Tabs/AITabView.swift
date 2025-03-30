@@ -28,7 +28,7 @@ struct AITabView: View {
                 if publicBots.isEmpty && userBots.isEmpty && isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if errorMessage.isNotEmpty {
+                } else if errorMessage.notEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 60))
@@ -65,7 +65,7 @@ struct AITabView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
-                        if !userBots.isEmpty {
+                        if userBots.isNotEmpty {
                             Section(header: Text("My Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: userBots,
@@ -81,7 +81,7 @@ struct AITabView: View {
                             }
                         }
                         
-                        if !publicBots.isEmpty {
+                        if publicBots.isNotEmpty {
                             Section(header: Text("Public Bots").font(.headline)) {
                                 AIBotListSection(
                                     bots: publicBots,
@@ -164,7 +164,7 @@ private extension AITabView {
                 await MainActor.run {
                     publicBots = allPublicSettings.filter { bot in
                         // Don't show bots in public section that are already in user's section
-                        !userBotsResult.contains { $0.id == bot.id }
+                        userBotsResult.contains(where: { $0.id == bot.id }).isFalse
                     }
                     userBots = userBotsResult
                     ratings = allRatings ?? [:]
