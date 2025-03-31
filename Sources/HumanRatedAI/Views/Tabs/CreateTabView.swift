@@ -9,6 +9,7 @@
 //  Created by Denis Bystruev on 10/27/24.
 //
 
+import SkipKit
 import SwiftUI
 
 struct CreateTabView: View {
@@ -18,9 +19,18 @@ struct CreateTabView: View {
     @State private var isOpenSource = false
     @State private var isPublic = false
     @State private var isSaving = false
+    @State private var imageURLDebounceTask: Task<Void, Never>?
     @State private var imageURLString = ""
     @State private var showErrorAlert = false
     @State private var showSuccessAlert = false
+    @State private var urlUpdateCounter = 0  // Track URL changes
+    
+    // Media picker states
+    @State private var isUploading = false
+    @State private var selectedImage: UIImage?
+    @State private var selectedMediaURL: URL?
+    @State private var showMediaPicker = false
+    @State private var pickerType: MediaPickerType = .library
     
     var body: some View {
         NavigationStack {
@@ -35,14 +45,14 @@ struct CreateTabView: View {
                         if aiSetting.desc?.isEmptyTrimmed != false {
                             Text("Description")
                                 .font(.body)
-#if !os(Android)
-                                .foregroundColor(Color(.placeholderText))
-                                .padding(.top, 8)
-#else
+#if os(Android)
                                 .foregroundColor(Color.gray)
                                 .opacity(0.67)
                                 .padding(.leading, 12)
                                 .padding(.top, 18)
+#else
+                                .foregroundColor(Color(.placeholderText))
+                                .padding(.top, 8)
 #endif
                         }
                         
@@ -109,16 +119,144 @@ struct CreateTabView: View {
                 }
                 
                 Section(header: Text("Image").font(.subheadline)) {
-                    TextField("Image URL", text: $imageURLString)
+                    // Image preview (if selected)
+                    if let selectedImage {
+                        HStack {
+                            Spacer()
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 150, height: 150)
+                                .clipShape(Circle())
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    } else if let imageURL = aiSetting.imageURL {
+                        // Show existing image preview from URL if available
+                        VStack {
+                            HStack {
+                                Spacer()
+                                // Use ID modifier with counter to force refresh when URL changes
+                                CachedImage(url: imageURL) { imageData in
+                                    if let image = UIImage(data: imageData) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                    }
+                                } placeholder: {
+                                    ProgressView()
+                                        .frame(width: 150, height: 150)
+                                }
+                                .id("cachedImage-\(imageURL.absoluteString)-\(urlUpdateCounter)")
+                                .frame(width: 150, height: 150)
+                                .clipShape(Circle())
+                                Spacer()
+                            }
+                            Text("Image URL: \(imageURL.absoluteString)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        // Show placeholder image when no image is selected
+                        HStack {
+                            Spacer()
+                            Image(systemName: "person.crop.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 150, height: 150)
+                                .foregroundColor(.gray)
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    // Image selection buttons
+                    HStack {
+#if os(Android)
+                        Spacer()
+#endif
+                        Button(action: {
+                            pickerType = .library
+                            showMediaPicker = true
+                        }) {
+                            HStack {
+#if !os(Android)
+                                Image(systemName: "photo")
+#endif
+                                Text("From Library")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+#if os(Android)
+                        Spacer()
+#endif
+                        Button(action: {
+                            pickerType = .camera
+                            showMediaPicker = true
+                        }) {
+                            HStack {
+#if !os(Android)
+                                Image(systemName: "camera")
+#endif
+                                Text("Take Photo")
+                            }
+                        }
+                        .buttonStyle(.bordered)
+#if os(Android)
+                        Spacer()
+#endif
+                    }
+                    .padding(.vertical, 4)
+                    
+                    // Manual URL entry (fallback option)
+                    TextField("Or enter image URL", text: $imageURLString)
+#if !os(Android)
+                        .disableAutocorrection(true)
+#endif
                         .font(.body)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
                         .onChange(of: imageURLString) { newValue in
-                            aiSetting.imageURL = URL(string: newValue)
+                            // Cancel any previous task
+                            imageURLDebounceTask?.cancel()
+                            
+                            // Don't try to process empty or very short URLs
+                            if newValue.count < 10 {
+                                // Clear image URL if text is too short
+                                if aiSetting.imageURL != nil {
+                                    aiSetting.imageURL = nil
+                                    urlUpdateCounter += 1
+                                }
+                                return
+                            }
+                            
+                            // Create new debounce task with 500ms delay
+                            imageURLDebounceTask = Task {
+                                // Wait for user to stop typing (500ms)
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                
+                                // Check if task was cancelled during the delay
+                                if Task.isCancelled { return }
+                                
+                                // Now try to process the URL
+                                await MainActor.run {
+                                    if let imageURL = URL(string: newValue), imageURL.canOpen {
+                                        aiSetting.imageURL = imageURL
+                                        // Clear selected image if URL is provided manually
+                                        selectedImage = nil
+                                        selectedMediaURL = nil
+                                        // Increment counter to force view update
+                                        urlUpdateCounter += 1
+                                    }
+                                }
+                            }
                         }
                 }
                 
                 Section {
                     Button(action: saveAIBot) {
-                        if isSaving {
+                        if isSaving || isUploading {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
@@ -126,11 +264,11 @@ struct CreateTabView: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(aiSetting.name.isEmptyTrimmed || isSaving)
+                    .disabled(aiSetting.name.isEmptyTrimmed || isSaving || isUploading)
                     .font(.body)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .background(aiSetting.name.isEmptyTrimmed ? Color.gray.opacity(0.5) : Color.blue)
+                    .background(aiSetting.name.isEmptyTrimmed || isSaving || isUploading ? Color.gray.opacity(0.5) : Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(10)
                 }
@@ -149,16 +287,55 @@ struct CreateTabView: View {
             } message: {
                 Text(errorMessage)
             }
+            // MediaPicker from SkipKit
+            .withMediaPicker(type: pickerType, isPresented: $showMediaPicker, selectedImageURL: $selectedMediaURL)
+            .onChange(of: selectedMediaURL) { newURL in
+                if let url = newURL {
+                    loadImageFromURL(url)
+                }
+            }
+            .onDisappear {
+                // Cancel any ongoing tasks when view disappears
+                imageURLDebounceTask?.cancel()
+                imageURLDebounceTask = nil
+            }
         }
     }
 }
 
 private extension CreateTabView {
+    func loadImageFromURL(_ url: URL) {
+        // Load the selected image from the URL
+        Task {
+            do {
+                let data = try Data(contentsOf: url)
+                if let image = UIImage(data: data) {
+                    await MainActor.run {
+                        selectedImage = image
+                        // Clear any manual URL input
+                        imageURLString = ""
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
+                }
+            }
+        }
+    }
+    
     func resetForm() {
         aiSetting = AISetting(name: "")
+        // Cancel any pending URL processing
+        imageURLDebounceTask?.cancel()
+        imageURLDebounceTask = nil
         imageURLString = ""
         isOpenSource = false
         isPublic = false
+        selectedImage = nil
+        selectedMediaURL = nil
+        urlUpdateCounter = 0  // Reset the counter
     }
     
     func saveAIBot() {
@@ -176,6 +353,16 @@ private extension CreateTabView {
         aiSetting.id = UUID().uuidString
         Task {
             do {
+                // If there's a selected image, upload it first
+                if selectedImage != nil, imageURLString.isEmptyTrimmed {
+                    if let downloadURL = try await uploadImageToStorage() {
+                        aiSetting.imageURL = downloadURL
+                    }
+                } else if imageURLString.notEmptyTrimmed {
+                    aiSetting.imageURL = URL(string: imageURLString)
+                }
+                
+                // Save the AI setting to Firestore
                 let documentID = try await FirestoreManager.shared.saveAISetting(aiSetting, userID: user.uid)
                 await MainActor.run {
                     aiSetting.id = documentID
@@ -189,6 +376,28 @@ private extension CreateTabView {
                     showErrorAlert = true
                 }
             }
+        }
+    }
+    
+    func uploadImageToStorage() async throws -> URL? {
+        guard let user = authManager.user, let image = selectedImage else { return nil }
+        await MainActor.run {
+            isUploading = true
+        }
+        do {
+            let path = StorageManager.shared.generateUniqueFilePath(for: user.uid, fileType: "ai_settings", fileExtension: "jpg")
+            let downloadURL = try await StorageManager.shared.uploadImage(image, to: path, compressionQuality: 0.75)
+            await MainActor.run {
+                isUploading = false
+            }
+            return downloadURL
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+                isUploading = false
+                showErrorAlert = true
+            }
+            throw error
         }
     }
 }

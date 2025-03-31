@@ -123,6 +123,9 @@
     "Favs" : {
 
     },
+    "From Library" : {
+
+    },
     "Hello [%@](https://skip.tools)!" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -187,7 +190,7 @@
     "Image Caption Instructions" : {
 
     },
-    "Image URL" : {
+    "Image URL: %@" : {
 
     },
     "Item %lld" : {
@@ -300,6 +303,9 @@
 
     },
     "Open Source" : {
+
+    },
+    "Or enter image URL" : {
 
     },
     "Powered by %@" : {
@@ -436,6 +442,9 @@
           }
         }
       }
+    },
+    "Take Photo" : {
+
     },
     "TODO: Chat interface" : {
 

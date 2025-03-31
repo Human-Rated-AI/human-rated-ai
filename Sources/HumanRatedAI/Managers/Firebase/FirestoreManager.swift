@@ -70,6 +70,32 @@ extension FirestoreManager {
         return aiSettingsFrom(snapshot)
     }
     
+    /// Check if an image URL is used by other bots
+    /// - Parameters:
+    ///   - imageURL: The image URL to check
+    ///   - excludingBotID: Optional bot ID to exclude from the check
+    /// - Returns: True if the image is used by other bots, false otherwise
+    public func isImageUsedByOtherBots(imageURL: URL, excludingBotID: String? = nil) async throws -> Bool {
+        let urlString = imageURL.absoluteString
+        // Build query for bots that use this image URL
+        var query = db.aiSettings
+            .whereField(AISetting.CodingKeys.imageURL.rawValue, isEqualTo: urlString)
+            .limit(to: 1) // We only need to know if at least one exists
+        // If we have a bot ID to exclude, add that to the query
+        if let excludingBotID {
+            // Note: For Firebase, we need to use a composite query or a different approach
+            // since not all platforms support not-equal queries directly
+            // Get the document ID field
+            let documentIDField = FieldPath.documentID()
+            // Add the condition to exclude specific bot ID
+            query = query.whereField(documentIDField, isNotEqualTo: excludingBotID)
+        }
+        // Execute query
+        let snapshot = try await query.getDocuments()
+        // If there's at least one document, the image is used by other bots
+        return snapshot.documents.isNotEmpty
+    }
+    
     /// Save a new AI setting to Firestore
     /// - Parameters:
     ///   - aiSetting: The AI setting to save
@@ -99,9 +125,25 @@ extension FirestoreManager {
                           code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Permission denied or AI Setting not found"])
         }
+        // Get the previous image URL before updating
+        var previousImageURL: URL? = nil
+        if let imageURLString = data[AISetting.CodingKeys.imageURL.rawValue] as? String {
+            previousImageURL = URL(string: imageURLString)
+        }
+        // Update the document
         let updateData = prepareAISettingData(aiSetting, userID: userID, isUpdating: true)
-        // Update the document in Firestore
         try await docRef.updateData(updateData)
+        // If the image URL has changed and the previous URL was a user upload,
+        // check if it's still used by other bots and delete if not
+        if let prevURL = previousImageURL,
+           aiSetting.imageURL?.absoluteString != prevURL.absoluteString,
+           StorageManager.shared.isUserUploadedImage(prevURL, userID: userID) {
+            let isUsedByOthers = try await isImageUsedByOtherBots(imageURL: prevURL, excludingBotID: aiSetting.id)
+            if isUsedByOthers.isFalse {
+                // The image is no longer used, so delete it
+                try await StorageManager.shared.deleteFileFromURL(prevURL)
+            }
+        }
         return true
     }
     
