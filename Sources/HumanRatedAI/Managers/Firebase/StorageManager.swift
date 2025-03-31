@@ -29,40 +29,13 @@ public class StorageManager: ObservableObject {
 
 // MARK: - Public Methods
 extension StorageManager {
-    /// Upload data to Firebase Storage
-    /// - Parameters:
-    ///   - data: The data to upload
-    ///   - path: The storage path (e.g., "users/userId/images/profile.jpg")
-    ///   - metadata: Optional metadata for the file
-    /// - Returns: Download URL for the uploaded file
-    public func uploadData(_ data: Data, to path: String, metadata: StorageMetadata? = nil) async throws -> URL {
-        let fileRef = storageRef.child(path)
-        let uploadMetadata = metadata ?? StorageMetadata()
-        
-        // Perform the upload using the Skip-compatible method
-        let resultMetadata = try await fileRef.putDataAsync(data, metadata: uploadMetadata)
-        
-        // Get the download URL
-        return try await fileRef.downloadURL()
-    }
-    
-    /// Upload an image to Firebase Storage
-    /// - Parameters:
-    ///   - image: The UIImage to upload
-    ///   - path: The storage path (e.g., "users/userId/images/profile.jpg")
-    ///   - compressionQuality: JPEG compression quality (0.0 to 1.0)
-    /// - Returns: Download URL for the uploaded image
-    public func uploadImage(_ image: UIImage, to path: String, compressionQuality: CGFloat = 0.8) async throws -> URL {
-        guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
-            throw NSError(domain: "StorageError",
-                          code: 400,
-                          userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to JPEG data"])
-        }
-        
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-        
-        return try await uploadData(imageData, to: path, metadata: metadata)
+    /// Delete a file from Firebase Storage using a URL
+    /// - Parameter url: file URL used to access the file
+    public func deleteFileFromURL(_ url: URL) async throws {
+        // Get a direct reference to the file using the URL
+        let fileRef = try storage.reference(for: url)
+        // Delete the file
+        try await fileRef.delete()
     }
     
     /// Download data from Firebase Storage
@@ -102,13 +75,6 @@ extension StorageManager {
         return try await fileRef.downloadURL()
     }
     
-    /// Delete a file from Firebase Storage
-    /// - Parameter path: The storage path to the file
-    public func deleteFile(at path: String) async throws {
-        let fileRef = storageRef.child(path)
-        try await fileRef.delete()
-    }
-    
     /// Get metadata for a file
     /// - Parameter path: The storage path to the file
     /// - Returns: The metadata for the file
@@ -126,10 +92,54 @@ extension StorageManager {
         let fileRef = storageRef.child(path)
         return try await fileRef.updateMetadata(metadata)
     }
+    
+    /// Upload data to Firebase Storage
+    /// - Parameters:
+    ///   - data: The data to upload
+    ///   - path: The storage path (e.g., "users/userId/images/profile.jpg")
+    ///   - metadata: Optional metadata for the file
+    /// - Returns: Download URL for the uploaded file
+    public func uploadData(_ data: Data, to path: String, metadata: StorageMetadata? = nil) async throws -> URL {
+        let fileRef = storageRef.child(path)
+        let uploadMetadata = metadata ?? StorageMetadata()
+        
+        // Perform the upload using the Skip-compatible method
+        _ = try await fileRef.putDataAsync(data, metadata: uploadMetadata)
+        
+        // Get the download URL
+        return try await fileRef.downloadURL()
+    }
+    
+    /// Upload an image to Firebase Storage
+    /// - Parameters:
+    ///   - image: The UIImage to upload
+    ///   - path: The storage path (e.g., "users/userId/images/profile.jpg")
+    ///   - compressionQuality: JPEG compression quality (0.0 to 1.0)
+    /// - Returns: Download URL for the uploaded image
+    public func uploadImage(_ image: UIImage, to path: String, compressionQuality: CGFloat = 0.8) async throws -> URL {
+        guard let imageData = image.jpegData(compressionQuality: compressionQuality) else {
+            throw NSError(domain: "StorageError",
+                          code: 400,
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to JPEG data"])
+        }
+        
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        
+        return try await uploadData(imageData, to: path, metadata: metadata)
+    }
 }
 
 // MARK: - Utility Methods
 extension StorageManager {
+    /// Extract file name from a storage path
+    /// - Parameter path: The storage path
+    /// - Returns: File name
+    public func fileNameFromPath(_ path: String) -> String {
+        let components = path.components(separatedBy: "/")
+        return components.last ?? path
+    }
+    
     /// Generate a unique file path for user uploads
     /// - Parameters:
     ///   - userID: User identifier
@@ -142,12 +152,15 @@ extension StorageManager {
         return "users/\(userID)/\(fileType)/\(timestamp)_\(randomComponent).\(fileExtension)"
     }
     
-    /// Extract file name from a storage path
-    /// - Parameter path: The storage path
-    /// - Returns: File name
-    public func fileNameFromPath(_ path: String) -> String {
-        let components = path.components(separatedBy: "/")
-        return components.last ?? path
+    /// Checks if the image is uploaded by the user (has path with "/users/{userID}/ai_settings/" and ending with ".jpg", ".jpeg", or ".png")
+    /// - Parameters:
+    ///   - url: the url to check
+    ///   - userID: user ID to check against
+    /// - Returns: true if the image is uploaded by the user
+    public func isUserUploadedImage(_ url: URL, userID: String) -> Bool {
+        let path = url.path
+        return path.contains("/users/\(userID)/ai_settings/") &&
+        (path.hasSuffix(".jpg") || path.hasSuffix(".jpeg") || path.hasSuffix(".png"))
     }
 }
 

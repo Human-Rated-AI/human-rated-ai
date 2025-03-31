@@ -63,11 +63,24 @@ struct ChatView: View {
 }
 
 private extension ChatView {
-    private func deleteBot() {
+    func deleteBot() {
         guard let user = authManager.user else { return }
         isDeleting = true
         Task {
             do {
+                // Handle image deletion
+                if let imageURL = bot.imageURL, StorageManager.shared.isUserUploadedImage(imageURL, userID: user.uid) {
+                    // Check if the image is used by other bots before deleting
+                    let isImageUsedByOthers = try await FirestoreManager.shared.isImageUsedByOtherBots(
+                        imageURL: imageURL,
+                        excludingBotID: bot.id
+                    )
+                    // Delete the image if it's not used by other bots
+                    if isImageUsedByOthers.isFalse {
+                        try await StorageManager.shared.deleteFileFromURL(imageURL)
+                    }
+                }
+                // Delete the bot
                 try await FirestoreManager.shared.deleteAISetting(documentID: bot.id, userID: user.uid)
                 await MainActor.run {
                     isDeleting = false

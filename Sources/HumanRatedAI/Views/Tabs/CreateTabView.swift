@@ -284,7 +284,7 @@ private extension CreateTabView {
         Task {
             do {
                 // If there's a selected image, upload it first
-                if let selectedImage, imageURLString.isEmptyTrimmed {
+                if selectedImage != nil, imageURLString.isEmptyTrimmed {
                     if let downloadURL = try await uploadImageToStorage() {
                         aiSetting.imageURL = downloadURL
                     }
