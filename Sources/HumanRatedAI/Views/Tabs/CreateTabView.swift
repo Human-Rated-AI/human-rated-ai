@@ -19,6 +19,7 @@ struct CreateTabView: View {
     @State private var isOpenSource = false
     @State private var isPublic = false
     @State private var isSaving = false
+    @State private var imageURLDebounceTask: Task<Void, Never>?
     @State private var imageURLString = ""
     @State private var showErrorAlert = false
     @State private var showSuccessAlert = false
@@ -217,13 +218,38 @@ struct CreateTabView: View {
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .onChange(of: imageURLString) { newValue in
-                            if let imageURL = URL(string: newValue), imageURL.canOpen {
-                                aiSetting.imageURL = imageURL
-                                // Clear selected image if URL is provided manually
-                                selectedImage = nil
-                                selectedMediaURL = nil
-                                // Increment counter to force view update
-                                urlUpdateCounter += 1
+                            // Cancel any previous task
+                            imageURLDebounceTask?.cancel()
+                            
+                            // Don't try to process empty or very short URLs
+                            if newValue.count < 10 {
+                                // Clear image URL if text is too short
+                                if aiSetting.imageURL != nil {
+                                    aiSetting.imageURL = nil
+                                    urlUpdateCounter += 1
+                                }
+                                return
+                            }
+                            
+                            // Create new debounce task with 500ms delay
+                            imageURLDebounceTask = Task {
+                                // Wait for user to stop typing (500ms)
+                                try? await Task.sleep(nanoseconds: 500_000_000)
+                                
+                                // Check if task was cancelled during the delay
+                                if Task.isCancelled { return }
+                                
+                                // Now try to process the URL
+                                await MainActor.run {
+                                    if let imageURL = URL(string: newValue), imageURL.canOpen {
+                                        aiSetting.imageURL = imageURL
+                                        // Clear selected image if URL is provided manually
+                                        selectedImage = nil
+                                        selectedMediaURL = nil
+                                        // Increment counter to force view update
+                                        urlUpdateCounter += 1
+                                    }
+                                }
                             }
                         }
                 }
@@ -268,6 +294,11 @@ struct CreateTabView: View {
                     loadImageFromURL(url)
                 }
             }
+            .onDisappear {
+                // Cancel any ongoing tasks when view disappears
+                imageURLDebounceTask?.cancel()
+                imageURLDebounceTask = nil
+            }
         }
     }
 }
@@ -296,6 +327,9 @@ private extension CreateTabView {
     
     func resetForm() {
         aiSetting = AISetting(name: "")
+        // Cancel any pending URL processing
+        imageURLDebounceTask?.cancel()
+        imageURLDebounceTask = nil
         imageURLString = ""
         isOpenSource = false
         isPublic = false
