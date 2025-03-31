@@ -22,6 +22,7 @@ struct CreateTabView: View {
     @State private var imageURLString = ""
     @State private var showErrorAlert = false
     @State private var showSuccessAlert = false
+    @State private var urlUpdateCounter = 0  // Track URL changes
     
     // Media picker states
     @State private var isUploading = false
@@ -134,6 +135,7 @@ struct CreateTabView: View {
                         VStack {
                             HStack {
                                 Spacer()
+                                // Use ID modifier with counter to force refresh when URL changes
                                 CachedImage(url: imageURL) { imageData in
                                     if let image = UIImage(data: imageData) {
                                         Image(uiImage: image)
@@ -144,6 +146,7 @@ struct CreateTabView: View {
                                     ProgressView()
                                         .frame(width: 150, height: 150)
                                 }
+                                .id("cachedImage-\(imageURL.absoluteString)-\(urlUpdateCounter)")
                                 .frame(width: 150, height: 150)
                                 .clipShape(Circle())
                                 Spacer()
@@ -219,6 +222,8 @@ struct CreateTabView: View {
                                 // Clear selected image if URL is provided manually
                                 selectedImage = nil
                                 selectedMediaURL = nil
+                                // Increment counter to force view update
+                                urlUpdateCounter += 1
                             }
                         }
                 }
@@ -296,6 +301,7 @@ private extension CreateTabView {
         isPublic = false
         selectedImage = nil
         selectedMediaURL = nil
+        urlUpdateCounter = 0  // Reset the counter
     }
     
     func saveAIBot() {
