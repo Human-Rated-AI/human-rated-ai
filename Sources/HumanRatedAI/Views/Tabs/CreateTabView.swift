@@ -123,18 +123,48 @@ struct CreateTabView: View {
                             Spacer()
                             Image(uiImage: selectedImage)
                                 .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: 200)
-                                .cornerRadius(8)
+                                .scaledToFill()
+                                .frame(width: 150, height: 150)
+                                .clipShape(Circle())
                             Spacer()
                         }
                         .padding(.vertical, 4)
                     } else if let imageURL = aiSetting.imageURL {
                         // Show existing image preview from URL if available
-                        Text("Image URL: \(imageURL.absoluteString)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
+                        VStack {
+                            HStack {
+                                Spacer()
+                                CachedImage(url: imageURL) { imageData in
+                                    if let image = UIImage(data: imageData) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                    }
+                                } placeholder: {
+                                    ProgressView()
+                                        .frame(width: 150, height: 150)
+                                }
+                                .frame(width: 150, height: 150)
+                                .clipShape(Circle())
+                                Spacer()
+                            }
+                            Text("Image URL: \(imageURL.absoluteString)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        // Show placeholder image when no image is selected
+                        HStack {
+                            Spacer()
+                            Image(systemName: "person.crop.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 150, height: 150)
+                                .foregroundColor(.gray)
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
                     }
                     
                     // Image selection buttons
