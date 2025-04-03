@@ -299,11 +299,11 @@ struct AISettingFormView<ViewModel: AISettingViewModel>: View {
                 set: { viewModel.processImageURLString($0) }
             ))
 #if !os(Android)
-                .disableAutocorrection(true)
+            .disableAutocorrection(true)
 #endif
-                .font(.body)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
+            .font(.body)
+            .keyboardType(.URL)
+            .textInputAutocapitalization(.never)
         }
     }
     
@@ -318,16 +318,16 @@ struct AISettingFormView<ViewModel: AISettingViewModel>: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .disabled(viewModel.aiSetting.name.isEmptyTrimmed || 
-                 (isEdit && !viewModel.hasChanges) || 
-                 viewModel.isActionInProgress || 
-                 viewModel.isUploading)
+        .disabled(viewModel.aiSetting.name.isEmptyTrimmed ||
+                  (isEdit && !viewModel.hasChanges) ||
+                  viewModel.isActionInProgress ||
+                  viewModel.isUploading)
         .font(.body)
         .padding()
         .background(
-            (viewModel.aiSetting.name.isEmptyTrimmed || 
-             (isEdit && !viewModel.hasChanges) || 
-             viewModel.isActionInProgress || 
+            (viewModel.aiSetting.name.isEmptyTrimmed ||
+             (isEdit && !viewModel.hasChanges) ||
+             viewModel.isActionInProgress ||
              viewModel.isUploading)
             ? Color.gray.opacity(0.5)
             : Color.blue
@@ -373,16 +373,16 @@ struct AISettingToolbarButton<ViewModel: AISettingViewModel>: View {
                     .fontWeight(.semibold)
             }
         }
-        .disabled(viewModel.aiSetting.name.isEmptyTrimmed || 
-                 (isEdit && !viewModel.hasChanges) || 
-                 viewModel.isActionInProgress || 
-                 viewModel.isUploading)
+        .disabled(viewModel.aiSetting.name.isEmptyTrimmed ||
+                  (isEdit && !viewModel.hasChanges) ||
+                  viewModel.isActionInProgress ||
+                  viewModel.isUploading)
 #if os(Android)
         // Android needs explicit styling
         .opacity(viewModel.aiSetting.name.isEmptyTrimmed || (isEdit && !viewModel.hasChanges) ? 0.5 : 1.0)
-        .foregroundColor((!viewModel.aiSetting.name.isEmptyTrimmed && (!isEdit || viewModel.hasChanges)) && 
-                        !viewModel.isActionInProgress && 
-                        !viewModel.isUploading ? .blue : .gray)
+        .foregroundColor((!viewModel.aiSetting.name.isEmptyTrimmed && (!isEdit || viewModel.hasChanges)) &&
+                         !viewModel.isActionInProgress &&
+                         !viewModel.isUploading ? .blue : .gray)
 #endif
     }
 }
