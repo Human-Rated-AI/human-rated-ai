@@ -66,6 +66,10 @@ struct EditBotView: View {
                             dismiss()
                         }
                     }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        updateToolbarButton
+                    }
                 }
         }
 #else
@@ -74,6 +78,11 @@ struct EditBotView: View {
             .navigationTitle("Edit AI Bot")
             .disabled(isUpdating || isUploading)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    updateToolbarButton
+                }
+            }
 #endif
     }
     
@@ -388,6 +397,25 @@ struct EditBotView: View {
 }
 
 private extension EditBotView {
+    // Toolbar update button that follows the same state rules as the main update button
+    var updateToolbarButton: some View {
+        Button(action: updateAIBot) {
+            if isUpdating || isUploading {
+                ProgressView()
+                    .frame(width: 16, height: 16)
+            } else {
+                Text("Update")
+                    .fontWeight(.semibold)
+            }
+        }
+        .disabled(editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
+#if os(Android)
+        // Android needs explicit styling
+        .opacity(editedBot.name.isEmptyTrimmed || !hasChanges ? 0.5 : 1.0)
+        .foregroundColor(hasChanges && !editedBot.name.isEmptyTrimmed && !isUpdating && !isUploading ? .blue : .gray)
+#endif
+    }
+    
     func checkForChanges() {
         // Check if any properties have changed from the original bot
         hasChanges = originalBot.name != editedBot.name
