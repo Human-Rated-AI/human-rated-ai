@@ -56,15 +56,12 @@ struct ChatView: View {
             })
         }
 #else
-        // On iOS, we use NavigationLink instead of sheet for better alert handling
-        .background(
-            NavigationLink(destination: EditBotView(bot: bot, onBotUpdated: { updatedBot in
+        // On iOS, use navigationDestination for better navigation handling
+        .navigationDestination(isPresented: $showEditView) {
+            EditBotView(bot: bot, onBotUpdated: { updatedBot in
                 self.bot = updatedBot
-            }), isActive: $showEditView) {
-                EmptyView()
-            }
-                .opacity(0)
-        )
+            })
+        }
 #endif
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
