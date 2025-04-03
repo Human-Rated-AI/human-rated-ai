@@ -484,7 +484,7 @@ private extension EditBotView {
                 
                 // Update the AI setting in Firestore only if there are changes
                 if hasChanges {
-                    try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
+                    let _ = try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
                 }
                 
                 // Using MainActor to update UI state
