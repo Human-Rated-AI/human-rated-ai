@@ -3,27 +3,28 @@
 // as published by the Free Software Foundation https://fsf.org
 
 //
-//  CreateTabView.swift
+//  EditBotView.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 10/27/24.
+//  Created by Claude on 4/3/25.
 //
 
 import SkipKit
 import SwiftUI
 
-struct CreateTabView: View {
+struct EditBotView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
-    @State private var aiSetting = AISetting(name: "")
     @State private var errorMessage = ""
     @State private var imageURLDebounceTask: Task<Void, Never>?
     @State private var imageURLString = ""
-    @State private var isOpenSource = false
-    @State private var isPublic = false
-    @State private var isSaving = false
+    @State private var isOpenSource: Bool
+    @State private var isPublic: Bool
+    @State private var isUpdating = false
     @State private var showErrorAlert = false
     @State private var showSuccessAlert = false
     @State private var urlUpdateCounter = 0  // Track URL changes
+    @State private var hasChanges = false    // Track if changes have been made
     
     // Media picker states
     @State private var isUploading = false
@@ -32,17 +33,36 @@ struct CreateTabView: View {
     @State private var showMediaPicker = false
     @State private var pickerType: MediaPickerType = .library
     
+    // Original and editable bot
+    @State private var editedBot: AISetting
+    private let originalBot: AISetting
+    
+    init(bot: AISetting) {
+        self.originalBot = bot
+        _editedBot = State(initialValue: bot)
+        _isOpenSource = State(initialValue: bot.isOpenSource)
+        _isPublic = State(initialValue: bot.isPublic)
+        
+        // Initialize the URL string if there is an imageURL
+        if let imageURL = bot.imageURL {
+            _imageURLString = State(initialValue: imageURL.absoluteString)
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
                 Section(header: Text("Basic Information").font(.subheadline)) {
                     TextField("Name", text: Binding(
-                        get: { aiSetting.name },
-                        set: { aiSetting.name = $0 }
+                        get: { editedBot.name },
+                        set: {
+                            editedBot.name = $0
+                            checkForChanges()
+                        }
                     ))
                     .font(.body)
                     ZStack(alignment: .topLeading) {
-                        if aiSetting.desc?.isEmptyTrimmed != false {
+                        if editedBot.desc?.isEmptyTrimmed != false {
                             Text("Description")
                                 .font(.body)
 #if os(Android)
@@ -57,8 +77,11 @@ struct CreateTabView: View {
                         }
                         
                         TextEditor(text: Binding(
-                            get: { aiSetting.desc ?? "" },
-                            set: { aiSetting.desc = $0 }
+                            get: { editedBot.desc ?? "" },
+                            set: {
+                                editedBot.desc = $0
+                                checkForChanges()
+                            }
                         ))
                         .font(.body)
                         .scrollContentBackground(.hidden)
@@ -69,10 +92,11 @@ struct CreateTabView: View {
                         Toggle("Make Public", isOn: $isPublic)
                             .font(.body)
                             .onChange(of: isPublic) { newValue in
-                                aiSetting.isPublic = newValue
+                                editedBot.isPublic = newValue
                                 if newValue.isFalse {
                                     isOpenSource = false
                                 }
+                                checkForChanges()
                             }
                         Text("Everyone can use your bot")
                             .font(.caption)
@@ -83,10 +107,11 @@ struct CreateTabView: View {
                         Toggle("Open Source", isOn: $isOpenSource)
                             .font(.body)
                             .onChange(of: isOpenSource) { newValue in
-                                aiSetting.isOpenSource = newValue
+                                editedBot.isOpenSource = newValue
                                 if newValue {
                                     isPublic = true
                                 }
+                                checkForChanges()
                             }
                         Text("Everyone can see and copy your bot settings")
                             .font(.caption)
@@ -97,23 +122,35 @@ struct CreateTabView: View {
                 
                 Section(header: Text("AI Configuration").font(.subheadline)) {
                     TextField("Image Caption Instructions", text: Binding(
-                        get: { aiSetting.caption ?? "" },
-                        set: { aiSetting.caption = $0 }
+                        get: { editedBot.caption ?? "" },
+                        set: {
+                            editedBot.caption = $0
+                            checkForChanges()
+                        }
                     ))
                     .font(.body)
                     TextField("Prefix Instructions", text: Binding(
-                        get: { aiSetting.prefix ?? "" },
-                        set: { aiSetting.prefix = $0 }
+                        get: { editedBot.prefix ?? "" },
+                        set: {
+                            editedBot.prefix = $0
+                            checkForChanges()
+                        }
                     ))
                     .font(.body)
                     TextField("Suffix Instructions", text: Binding(
-                        get: { aiSetting.suffix ?? "" },
-                        set: { aiSetting.suffix = $0 }
+                        get: { editedBot.suffix ?? "" },
+                        set: {
+                            editedBot.suffix = $0
+                            checkForChanges()
+                        }
                     ))
                     .font(.body)
                     TextField("Welcome Message", text: Binding(
-                        get: { aiSetting.welcome ?? "" },
-                        set: { aiSetting.welcome = $0 }
+                        get: { editedBot.welcome ?? "" },
+                        set: {
+                            editedBot.welcome = $0
+                            checkForChanges()
+                        }
                     ))
                     .font(.body)
                 }
@@ -131,7 +168,7 @@ struct CreateTabView: View {
                             Spacer()
                         }
                         .padding(.vertical, 4)
-                    } else if let imageURL = aiSetting.imageURL {
+                    } else if let imageURL = editedBot.imageURL {
                         // Show existing image preview from URL if available
                         VStack {
                             HStack {
@@ -224,9 +261,10 @@ struct CreateTabView: View {
                             // Don't try to process empty or very short URLs
                             if newValue.count < 10 {
                                 // Clear image URL if text is too short
-                                if aiSetting.imageURL != nil {
-                                    aiSetting.imageURL = nil
+                                if editedBot.imageURL != nil {
+                                    editedBot.imageURL = nil
                                     urlUpdateCounter += 1
+                                    checkForChanges()
                                 }
                                 return
                             }
@@ -242,12 +280,18 @@ struct CreateTabView: View {
                                 // Now try to process the URL
                                 await MainActor.run {
                                     if let imageURL = URL(string: newValue), imageURL.canOpen {
-                                        aiSetting.imageURL = imageURL
+                                        let oldURL = editedBot.imageURL
+                                        editedBot.imageURL = imageURL
                                         // Clear selected image if URL is provided manually
                                         selectedImage = nil
                                         selectedMediaURL = nil
                                         // Increment counter to force view update
                                         urlUpdateCounter += 1
+                                        
+                                        // Check if URL has changed from the original
+                                        if oldURL != imageURL {
+                                            checkForChanges()
+                                        }
                                     }
                                 }
                             }
@@ -255,32 +299,53 @@ struct CreateTabView: View {
                 }
                 
                 Section {
-                    Button(action: saveAIBot) {
-                        if isSaving || isUploading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text("Create AI Bot")
+                    HStack {
+                        // Cancel button
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Text("Cancel")
                                 .frame(maxWidth: .infinity)
                         }
+                        .font(.body)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .foregroundColor(.primary)
+                        .cornerRadius(10)
+                        
+                        // Update button
+                        Button(action: updateAIBot) {
+                            if isUpdating || isUploading {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Text("Update")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .disabled(editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
+                        .font(.body)
+                        .padding()
+                        .background(
+                            (editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
+                            ? Color.gray.opacity(0.5)
+                            : Color.blue
+                        )
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                     }
-                    .disabled(aiSetting.name.isEmptyTrimmed || isSaving || isUploading)
-                    .font(.body)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .background(aiSetting.name.isEmptyTrimmed || isSaving || isUploading ? Color.gray.opacity(0.5) : Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
                 }
                 .listRowBackground(Color.clear)
             }
-            .navigationTitle("Create AI Bot")
+            .navigationTitle("Edit AI Bot")
+            .disabled(isUpdating || isUploading)
+            .navigationBarTitleDisplayMode(.inline)
             .alert("Success", isPresented: $showSuccessAlert) {
                 Button("OK") {
-                    resetForm()
+                    dismiss()
                 }
             } message: {
-                Text("Your AI bot has been created successfully!")
+                Text("Your AI bot has been updated successfully!")
             }
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK") {}
@@ -299,11 +364,32 @@ struct CreateTabView: View {
                 imageURLDebounceTask?.cancel()
                 imageURLDebounceTask = nil
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }
 
-private extension CreateTabView {
+private extension EditBotView {
+    func checkForChanges() {
+        // Check if any properties have changed from the original bot
+        hasChanges = originalBot.name != editedBot.name
+        || originalBot.desc != editedBot.desc
+        || originalBot.isPublic != editedBot.isPublic
+        || originalBot.isOpenSource != editedBot.isOpenSource
+        || originalBot.caption != editedBot.caption
+        || originalBot.prefix != editedBot.prefix
+        || originalBot.suffix != editedBot.suffix
+        || originalBot.welcome != editedBot.welcome
+        || originalBot.imageURL != editedBot.imageURL
+        || selectedImage != nil
+    }
+    
     func loadImageFromURL(_ url: URL) {
         // Load the selected image from the URL
         Task {
@@ -314,6 +400,8 @@ private extension CreateTabView {
                         selectedImage = image
                         // Clear any manual URL input
                         imageURLString = ""
+                        // Mark that changes have been made
+                        checkForChanges()
                     }
                 }
             } catch {
@@ -325,54 +413,44 @@ private extension CreateTabView {
         }
     }
     
-    func resetForm() {
-        aiSetting = AISetting(name: "")
-        // Cancel any pending URL processing
-        imageURLDebounceTask?.cancel()
-        imageURLDebounceTask = nil
-        imageURLString = ""
-        isOpenSource = false
-        isPublic = false
-        selectedImage = nil
-        selectedMediaURL = nil
-        urlUpdateCounter = 0  // Reset the counter
-    }
-    
-    func saveAIBot() {
+    func updateAIBot() {
         guard let user = authManager.user else {
-            errorMessage = "You must be logged in to create an AI bot"
+            errorMessage = "You must be logged in to update an AI bot"
             showErrorAlert = true
             return
         }
-        guard aiSetting.name.notEmptyTrimmed else {
+        guard editedBot.name.notEmptyTrimmed else {
             errorMessage = "Please provide a name for your AI bot"
             showErrorAlert = true
             return
         }
-        isSaving = true
-        aiSetting.id = UUID().uuidString
+        isUpdating = true
+        
+        // Save the trimmed version to avoid empty strings
+        var botToUpdate = editedBot.trimmed
+        
         Task {
             do {
                 // If there's a selected image, upload it first
                 if selectedImage != nil, imageURLString.isEmptyTrimmed {
                     if let downloadURL = try await uploadImageToStorage() {
-                        aiSetting.imageURL = downloadURL
+                        botToUpdate.imageURL = downloadURL
                     }
-                } else if imageURLString.notEmptyTrimmed {
-                    aiSetting.imageURL = URL(string: imageURLString)
+                } else if imageURLString.notEmptyTrimmed && editedBot.imageURL?.absoluteString != imageURLString {
+                    botToUpdate.imageURL = URL(string: imageURLString)
                 }
                 
-                // Save the AI setting to Firestore
-                let documentID = try await FirestoreManager.shared.saveAISetting(aiSetting, userID: user.uid)
+                // Update the AI setting in Firestore
+                try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
+                
                 await MainActor.run {
-                    aiSetting.id = documentID
-                    isSaving = false
+                    isUpdating = false
                     showSuccessAlert = true
                 }
             } catch {
                 await MainActor.run {
+                    isUpdating = false
                     errorMessage = error.localizedDescription
-                    isSaving = false
                     showErrorAlert = true
                 }
             }

@@ -8,6 +8,7 @@
 //
 //  Created by Denis Bystruev on 3/30/25.
 //
+
 import SwiftUI
 
 struct ChatView: View {
@@ -16,6 +17,7 @@ struct ChatView: View {
     @State private var deleteError: String?
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
+    @State private var showEditSheet = false
     @State private var showErrorAlert = false
     let bot: AISetting
     let isUserBot: Bool
@@ -45,6 +47,9 @@ struct ChatView: View {
         } message: {
             Text(deleteError ?? "Unknown error occurred")
         }
+        .sheet(isPresented: $showEditSheet) {
+            EditBotView(bot: bot)
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
         .toolbar {
@@ -52,7 +57,7 @@ struct ChatView: View {
                 if isUserBot {
                     HStack(spacing: 16) {
                         Button(action: {
-                            // Edit action will be implemented later
+                            showEditSheet = true
                         }) {
                             Image(systemName: "pencil")
                                 .foregroundColor(.blue)
