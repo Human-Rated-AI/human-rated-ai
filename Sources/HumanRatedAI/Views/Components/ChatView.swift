@@ -8,7 +8,9 @@
 //
 //  Created by Denis Bystruev on 3/30/25.
 //
+
 import SwiftUI
+import SkipKit
 
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
@@ -16,8 +18,10 @@ struct ChatView: View {
     @State private var deleteError: String?
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
+    @State private var showEditSheet = false
+    @State private var showEditView = false
     @State private var showErrorAlert = false
-    let bot: AISetting
+    @State var bot: AISetting
     let isUserBot: Bool
     
     var body: some View {
@@ -45,16 +49,45 @@ struct ChatView: View {
         } message: {
             Text(deleteError ?? "Unknown error occurred")
         }
+#if os(Android)
+        .sheet(isPresented: $showEditSheet) {
+            EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                self.bot = updatedBot
+            })
+        }
+#else
+        // On iOS, use navigationDestination for better navigation handling
+        .navigationDestination(isPresented: $showEditView) {
+            EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                self.bot = updatedBot
+            })
+        }
+#endif
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
+        // Use the ID modifier to ensure navigation title updates when bot changes
+        .id("chatView-\(bot.id)-\(bot.name)")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if isUserBot {
-                    Button(action: {
-                        showDeleteAlert = true
-                    }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
+                    HStack(spacing: 16) {
+                        Button(action: {
+#if os(Android)
+                            showEditSheet = true
+#else
+                            showEditView = true
+#endif
+                        }) {
+                            Image(systemName: "pencil")
+                                .foregroundColor(.blue)
+                        }
+                        
+                        Button(action: {
+                            showDeleteAlert = true
+                        }) {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
                     }
                 }
             }

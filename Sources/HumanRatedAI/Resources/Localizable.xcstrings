@@ -105,6 +105,9 @@
     "Description" : {
 
     },
+    "Edit AI Bot" : {
+
+    },
     "Error" : {
 
     },
@@ -452,6 +455,9 @@
     "Try Again" : {
 
     },
+    "Update" : {
+
+    },
     "User" : {
 
     },
@@ -491,6 +497,9 @@
 
     },
     "Your AI bot has been created successfully!" : {
+
+    },
+    "Your AI bot has been updated successfully!" : {
 
     }
   },
