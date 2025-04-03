@@ -343,47 +343,19 @@ struct EditBotView: View {
                     .cornerRadius(10)
                     
                     // Update button
-                    Button(action: updateAIBot) {
-                        if isUpdating || isUploading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text("Update")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .disabled(editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
-                    .font(.body)
-                    .padding()
-                    .background(
-                        (editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
-                        ? Color.gray.opacity(0.5)
-                        : Color.blue
-                    )
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                    UpdateButton(editedBot: $editedBot,
+                                 hasChanges: $hasChanges,
+                                 isUpdating: $isUpdating,
+                                 isUploading: $isUploading,
+                                 updateAIBot: updateAIBot)
                 }
 #else
                 // Full width Update button for iOS (Cancel is in toolbar)
-                Button(action: updateAIBot) {
-                    if isUpdating || isUploading {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Update")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .disabled(editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
-                .font(.body)
-                .padding()
-                .background(
-                    (editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
-                    ? Color.gray.opacity(0.5)
-                    : Color.blue
-                )
-                .foregroundColor(.white)
-                .cornerRadius(10)
+                UpdateButton(editedBot: $editedBot,
+                             hasChanges: $hasChanges,
+                             isUpdating: $isUpdating,
+                             isUploading: $isUploading,
+                             updateAIBot: updateAIBot)
 #endif
             }
             .listRowBackground(Color.clear)
@@ -528,5 +500,35 @@ private extension EditBotView {
             }
             throw error
         }
+    }
+}
+
+private struct UpdateButton: View {
+    @Binding var editedBot: AISetting
+    @Binding var hasChanges: Bool
+    @Binding var isUpdating: Bool
+    @Binding var isUploading: Bool
+    let updateAIBot: () -> Void
+    
+    var body: some View {
+        Button(action: updateAIBot) {
+            if isUpdating || isUploading {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+            } else {
+                Text("Update")
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .disabled(editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
+        .font(.body)
+        .padding()
+        .background(
+            (editedBot.name.isEmptyTrimmed || !hasChanges || isUpdating || isUploading)
+            ? Color.gray.opacity(0.5)
+            : Color.blue
+        )
+        .foregroundColor(.white)
+        .cornerRadius(10)
     }
 }
