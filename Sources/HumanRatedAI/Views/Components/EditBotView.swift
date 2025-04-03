@@ -13,9 +13,12 @@ import SkipKit
 import SwiftUI
 
 struct EditBotView: View {
+    // Callback for when the bot is updated
+    var onBotUpdated: ((AISetting) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
     @State private var errorMessage = ""
+    @State private var hasChanges = false    // Track if changes have been made
     @State private var imageURLDebounceTask: Task<Void, Never>?
     @State private var imageURLString = ""
     @State private var isOpenSource: Bool
@@ -24,7 +27,6 @@ struct EditBotView: View {
     @State private var showErrorAlert = false
     @State private var showSuccessAlert = false
     @State private var urlUpdateCounter = 0  // Track URL changes
-    @State private var hasChanges = false    // Track if changes have been made
     
     // Media picker states
     @State private var isUploading = false
@@ -37,7 +39,8 @@ struct EditBotView: View {
     @State private var editedBot: AISetting
     private let originalBot: AISetting
     
-    init(bot: AISetting) {
+    init(bot: AISetting, onBotUpdated: ((AISetting) -> Void)? = nil) {
+        self.onBotUpdated = onBotUpdated
         self.originalBot = bot
         _editedBot = State(initialValue: bot)
         _isOpenSource = State(initialValue: bot.isOpenSource)
@@ -479,12 +482,18 @@ private extension EditBotView {
                     botToUpdate.imageURL = URL(string: imageURLString)
                 }
                 
-                // Update the AI setting in Firestore
-                try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
+                // Update the AI setting in Firestore only if there are changes
+                if hasChanges {
+                    try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
+                }
                 
                 // Using MainActor to update UI state
                 await MainActor.run {
                     isUpdating = false
+                    // Call the callback with the updated bot
+                    if hasChanges {
+                        onBotUpdated?(botToUpdate)
+                    }
                     showSuccessAlert = true
                 }
             } catch {

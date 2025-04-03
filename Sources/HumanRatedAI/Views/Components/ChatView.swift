@@ -21,7 +21,7 @@ struct ChatView: View {
     @State private var showEditSheet = false
     @State private var showEditView = false
     @State private var showErrorAlert = false
-    let bot: AISetting
+    @State var bot: AISetting
     let isUserBot: Bool
     
     var body: some View {
@@ -51,12 +51,16 @@ struct ChatView: View {
         }
 #if os(Android)
         .sheet(isPresented: $showEditSheet) {
-            EditBotView(bot: bot)
+            EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                self.bot = updatedBot
+            })
         }
 #else
         // On iOS, we use NavigationLink instead of sheet for better alert handling
         .background(
-            NavigationLink(destination: EditBotView(bot: bot), isActive: $showEditView) {
+            NavigationLink(destination: EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                self.bot = updatedBot
+            }), isActive: $showEditView) {
                 EmptyView()
             }
                 .opacity(0)
@@ -64,6 +68,8 @@ struct ChatView: View {
 #endif
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
+        // Use the ID modifier to ensure navigation title updates when bot changes
+        .id("chatView-\(bot.id)-\(bot.name)")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if isUserBot {
