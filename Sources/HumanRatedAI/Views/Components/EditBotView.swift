@@ -409,16 +409,6 @@ struct EditBotView: View {
             imageURLDebounceTask?.cancel()
             imageURLDebounceTask = nil
         }
-#if !os(Android)
-        // iOS toolbar
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
-                    dismiss()
-                }
-            }
-        }
-#endif
     }
 }
 
