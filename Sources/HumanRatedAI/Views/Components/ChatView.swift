@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import SkipKit
 
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
@@ -18,6 +19,7 @@ struct ChatView: View {
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
     @State private var showEditSheet = false
+    @State private var showEditView = false
     @State private var showErrorAlert = false
     let bot: AISetting
     let isUserBot: Bool
@@ -47,9 +49,19 @@ struct ChatView: View {
         } message: {
             Text(deleteError ?? "Unknown error occurred")
         }
+#if os(Android)
         .sheet(isPresented: $showEditSheet) {
             EditBotView(bot: bot)
         }
+#else
+        // On iOS, we use NavigationLink instead of sheet for better alert handling
+        .background(
+            NavigationLink(destination: EditBotView(bot: bot), isActive: $showEditView) {
+                EmptyView()
+            }
+                .opacity(0)
+        )
+#endif
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(bot.name)
         .toolbar {
@@ -57,7 +69,11 @@ struct ChatView: View {
                 if isUserBot {
                     HStack(spacing: 16) {
                         Button(action: {
+#if os(Android)
                             showEditSheet = true
+#else
+                            showEditView = true
+#endif
                         }) {
                             Image(systemName: "pencil")
                                 .foregroundColor(.blue)
