@@ -64,7 +64,9 @@ struct SettingsTabView: View {
                         .cornerRadius(10)
                     }
                 }
+#if !os(Android)
                 .listRowBackground(Color.clear)
+#endif
             }
         }
         .navigationTitle("Settings")
