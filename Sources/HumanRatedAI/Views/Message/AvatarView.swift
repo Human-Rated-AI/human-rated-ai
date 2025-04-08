@@ -62,6 +62,14 @@ struct AvatarView: View {
             return
         }
         
+        // Check in-memory cache first
+        let cacheKey = imageURL.absoluteString
+        if let cachedImage = ImageMemoryCache.shared.getImage(for: cacheKey) {
+            self.image = cachedImage
+            self.isLoading = false
+            return
+        }
+        
         if imageURL.absoluteString.contains("firebasestorage.googleapis.com") {
 #if !os(Android)
             // For Firebase Storage URLs on iOS
@@ -69,6 +77,8 @@ struct AvatarView: View {
                 do {
                     let image = try await StorageManager.shared.downloadImageFromURL(imageURL)
                     await MainActor.run {
+                        // Save to cache before setting state
+                        ImageMemoryCache.shared.setImage(image, for: cacheKey)
                         self.image = image
                         self.isLoading = false
                     }
@@ -91,16 +101,32 @@ struct AvatarView: View {
     }
     
     private func loadImageFromURL(_ url: URL) {
+        let cacheKey = url.absoluteString
+        
         Task {
             do {
-                // Don't use cache for these problematic URLs
+                // Try to get from data cache first
+                if let cachedData = ImageCache.shared.getImageData(for: url),
+                   let uiImage = UIImage(data: cachedData) {
+                    await MainActor.run {
+                        ImageMemoryCache.shared.setImage(uiImage, for: cacheKey)
+                        self.image = uiImage
+                        self.isLoading = false
+                    }
+                    return
+                }
+                
+                // Otherwise download
                 var request = URLRequest(url: url)
-                request.cachePolicy = .reloadIgnoringLocalCacheData
+                request.cachePolicy = .returnCacheDataElseLoad
                 
                 let (data, _) = try await URLSession.shared.data(for: request)
                 
                 if let uiImage = UIImage(data: data) {
                     await MainActor.run {
+                        // Save to both caches
+                        ImageCache.shared.setImageData(data, for: url)
+                        ImageMemoryCache.shared.setImage(uiImage, for: cacheKey)
                         self.image = uiImage
                         self.isLoading = false
                     }

@@ -221,3 +221,27 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
         }
     }
 }
+
+class ImageMemoryCache {
+    static let shared = ImageMemoryCache()
+    private var cache = [String: UIImage]()
+    private let lock = NSLock()
+    
+    func getImage(for key: String) -> UIImage? {
+        lock.lock()
+        defer { lock.unlock() }
+        return cache[key]
+    }
+    
+    func setImage(_ image: UIImage, for key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        cache[key] = image
+    }
+    
+    func clearCache() {
+        lock.lock()
+        defer { lock.unlock() }
+        cache.removeAll()
+    }
+}
