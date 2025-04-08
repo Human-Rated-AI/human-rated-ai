@@ -6,7 +6,7 @@
 //  Message.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 4/8/25.
+//  Created by Claude 3.7 Sonet, Denis Bystruev on 4/8/25.
 //
 
 import Foundation

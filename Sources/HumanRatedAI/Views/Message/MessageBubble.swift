@@ -6,7 +6,7 @@
 //  MessageBubble.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 4/8/25.
+//  Created by Claude 3.7 Sonet, Denis Bystruev on 4/8/25.
 //
 
 import SwiftUI
@@ -19,12 +19,12 @@ struct MessageBubble: View {
     
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if !message.isUser {
+            if message.isUser {
+                Spacer()
+            } else {
                 // Bot avatar
                 AvatarView(imageURL: botImageURL, fallbackImageName: "person.circle.fill")
                     .frame(width: 32, height: 32)
-            } else {
-                Spacer()
             }
             
             // Message bubble

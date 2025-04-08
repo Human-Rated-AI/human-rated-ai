@@ -6,7 +6,7 @@
 //  ChatView.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 3/30/25.
+//  Created by Claude 3.7 Sonet, Denis Bystruev on 3/30/25.
 //
 
 import SwiftUI
@@ -27,6 +27,13 @@ struct ChatView: View {
     @State private var scrollProxy: ScrollViewProxy? = nil
     
     let isUserBot: Bool
+    private var sendMessageIcon: String {
+#if os(Android)
+        "chevron.up"
+#else
+        "arrow.up.circle.fill"
+#endif
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -60,8 +67,9 @@ struct ChatView: View {
                     }
                     .onAppear {
                         scrollProxy = proxy
-                        // Add welcome message if available and messages array is empty
-                        if messages.isEmpty, let welcome = bot.welcome, !welcome.isEmpty {
+                        // Add welcome message if messages array is empty
+                        if messages.isEmpty {
+                            let welcome = bot.welcome?.nonEmptyTrimmed ?? "Welcome to \(bot.name)!"
                             let welcomeMessage = Message(content: welcome, isUser: false, timestamp: Date())
                             messages.append(welcomeMessage)
                             // Scroll to the welcome message
@@ -93,7 +101,7 @@ struct ChatView: View {
                         .cornerRadius(20)
                     
                     Button(action: sendMessage) {
-                        Image(systemName: "arrow.up.circle.fill")
+                        Image(systemName: sendMessageIcon)
                             .font(.system(size: 30))
                             .foregroundColor(.blue)
                     }
@@ -131,7 +139,7 @@ struct ChatView: View {
             }
 #endif
             .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle(bot.name)
+            .navigationTitle("AI Chat")
             // Use the ID modifier to ensure navigation title updates when bot changes
             .id("chatView-\(bot.id)-\(bot.name)")
             .toolbar {
@@ -174,7 +182,7 @@ struct ChatView: View {
         messageText = ""
         
         // Simulate bot response (in a real app, this would call an AI service)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(1)) {
             simulateBotResponse(to: trimmedMessage)
         }
     }

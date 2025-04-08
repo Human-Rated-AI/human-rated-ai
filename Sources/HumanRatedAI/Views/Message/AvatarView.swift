@@ -6,7 +6,7 @@
 //  AvatarView.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 4/8/25.
+//  Created by Claude 3.7 Sonet, Denis Bystruev on 4/8/25.
 //
 
 import SwiftUI
@@ -19,7 +19,7 @@ struct AvatarView: View {
     
     var body: some View {
         Group {
-            if let imageData = imageData, let uiImage = UIImage(data: imageData) {
+            if let imageData, let uiImage = UIImage(data: imageData) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -37,7 +37,7 @@ struct AvatarView: View {
     }
     
     private func loadImage() {
-        guard let imageURL = imageURL else { return }
+        guard let imageURL else { return }
         
         Task {
             do {
@@ -46,7 +46,7 @@ struct AvatarView: View {
                     self.imageData = data
                 }
             } catch {
-                print("Failed to load image: \(error)")
+                debug("FAIL", AvatarView.self, "to load image: \(error)")
             }
         }
     }
