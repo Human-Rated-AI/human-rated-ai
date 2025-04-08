@@ -16,27 +16,107 @@ struct AvatarView: View {
     let fallbackImageName: String = "person.crop.circle.fill"
     let width: CGFloat
     let height: CGFloat
+    @State private var image: UIImage?
+    @State private var isLoading = true
+    @State private var loadFailed = false
+    @State private var retryCount = 0
     
     var body: some View {
-        if let imageURL {
-            CachedImage(url: imageURL) { imageData in
-                if let image = UIImage(data: imageData) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                }
-            } placeholder: {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: width, height: height)
+                    .clipShape(Circle())
+            } else if isLoading {
                 ProgressView()
                     .frame(width: width, height: height)
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: width, height: height)
+                    
+                    Button(action: {
+                        retryCount += 1
+                        isLoading = true
+                        loadFailed = false
+                        loadImage()
+                    }) {
+                        Image(systemName: "arrow.clockwise.circle")
+                            .font(.system(size: width/4))
+                            .foregroundColor(.gray)
+                    }
+                }
             }
-            .frame(width: width, height: height)
-            .clipShape(Circle())
+        }
+        .onAppear {
+            loadImage()
+        }
+    }
+    
+    private func loadImage() {
+        guard let imageURL = imageURL else {
+            isLoading = false
+            return
+        }
+        
+        if imageURL.absoluteString.contains("firebasestorage.googleapis.com") {
+#if !os(Android)
+            // For Firebase Storage URLs on iOS
+            Task {
+                do {
+                    let image = try await StorageManager.shared.downloadImageFromURL(imageURL)
+                    await MainActor.run {
+                        self.image = image
+                        self.isLoading = false
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.isLoading = false
+                        self.loadFailed = true
+                        debug("STORAGE", "Failed to download: \(error.localizedDescription)")
+                    }
+                }
+            }
+#else
+            // For Android, use URL approach
+            loadImageFromURL(imageURL)
+#endif
         } else {
-            Image(systemName: fallbackImageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: width, height: height)
-                .foregroundColor(.gray)
+            // For regular URLs
+            loadImageFromURL(imageURL)
+        }
+    }
+    
+    private func loadImageFromURL(_ url: URL) {
+        Task {
+            do {
+                // Don't use cache for these problematic URLs
+                var request = URLRequest(url: url)
+                request.cachePolicy = .reloadIgnoringLocalCacheData
+                
+                let (data, _) = try await URLSession.shared.data(for: request)
+                
+                if let uiImage = UIImage(data: data) {
+                    await MainActor.run {
+                        self.image = uiImage
+                        self.isLoading = false
+                    }
+                } else {
+                    await MainActor.run {
+                        self.isLoading = false
+                        self.loadFailed = true
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isLoading = false
+                    self.loadFailed = true
+                    debug("URL", "Failed to download: \(error.localizedDescription)")
+                }
+            }
         }
     }
 }

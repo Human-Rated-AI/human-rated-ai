@@ -107,6 +107,43 @@ extension StorageManager {
                                    userInfo: [NSLocalizedDescriptionKey: "Unknown error during download"])
     }
     
+    public func downloadImageFromURL(_ url: URL) async throws -> UIImage {
+        // Get a direct reference to the file using the URL
+        let fileRef = try storage.reference(for: url)
+        
+        // Download the data directly using the reference
+        let maxSize: Int64 = 50 * 1024 * 1024 // 50MB max size
+        
+        // Use platform-specific methods to get the data
+        let data: Data
+#if os(Android)
+        data = try await fileRef.getDataAsync(maxSize: maxSize)
+#else
+        data = try await withCheckedThrowingContinuation { continuation in
+            fileRef.getData(maxSize: maxSize) { downloadData, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let downloadData = downloadData {
+                    continuation.resume(returning: downloadData)
+                } else {
+                    let noDataError = NSError(domain: "StorageError",
+                                              code: 404,
+                                              userInfo: [NSLocalizedDescriptionKey: "No data returned"])
+                    continuation.resume(throwing: noDataError)
+                }
+            }
+        }
+#endif
+        
+        guard let image = UIImage(data: data) else {
+            throw NSError(domain: "StorageError",
+                          code: 400,
+                          userInfo: [NSLocalizedDescriptionKey: "Could not convert data to image"])
+        }
+        
+        return image
+    }
+    
     /// Get download URL for a file in Firebase Storage
     /// - Parameter path: The storage path to the file
     /// - Returns: The download URL
