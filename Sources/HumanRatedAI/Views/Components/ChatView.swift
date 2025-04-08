@@ -99,13 +99,16 @@ struct ChatView: View {
                         .padding(10)
                         .background(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1))
                         .cornerRadius(20)
+                        .onSubmit {
+                            sendMessage()
+                        }
                     
                     Button(action: sendMessage) {
                         Image(systemName: sendMessageIcon)
                             .font(.system(size: 30))
                             .foregroundColor(.blue)
                     }
-                    .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(messageText.isEmptyTrimmed)
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
@@ -171,8 +174,7 @@ struct ChatView: View {
     }
     
     private func sendMessage() {
-        let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMessage.isEmpty else { return }
+        guard let trimmedMessage = messageText.nonEmptyTrimmed else { return }
         
         // Add user message
         let userMessage = Message(content: trimmedMessage, isUser: true, timestamp: Date())
