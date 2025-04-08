@@ -10,6 +10,9 @@
     "AI Bot List" : {
 
     },
+    "AI Chat" : {
+
+    },
     "AI Configuration" : {
 
     },
@@ -191,9 +194,6 @@
 
     },
     "Image Caption Instructions" : {
-
-    },
-    "Image URL: %@" : {
 
     },
     "Item %lld" : {
@@ -449,10 +449,10 @@
     "Take Photo" : {
 
     },
-    "TODO: Chat interface" : {
+    "Try Again" : {
 
     },
-    "Try Again" : {
+    "Type a message..." : {
 
     },
     "Update" : {
