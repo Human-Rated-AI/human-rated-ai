@@ -24,7 +24,6 @@ struct MessageBubble: View {
             } else {
                 // Bot avatar
                 AvatarView(imageURL: botImageURL, width: 32, height: 32)
-                    .id("avatar-\(botImageURL?.absoluteString ?? "default")-\(Date().timeIntervalSince1970)")
             }
             
             // Message bubble
@@ -37,8 +36,8 @@ struct MessageBubble: View {
             
             if message.isUser {
                 // User avatar (placeholder - this would use user's avatar in a real implementation)
-                AvatarView(imageURL: nil, width: 32, height: 32)
-                    .id("avatar-\(botImageURL?.absoluteString ?? "default")-\(Date().timeIntervalSince1970)")
+                let userAvatarURL: URL? = nil // Replace with actual user avatar URL
+                AvatarView(imageURL: userAvatarURL, width: 32, height: 32)
             } else {
                 Spacer()
             }

@@ -23,7 +23,7 @@ struct AvatarView: View {
     
     var body: some View {
         Group {
-            if let image = image {
+            if let image {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -57,7 +57,7 @@ struct AvatarView: View {
     }
     
     private func loadImage() {
-        guard let imageURL = imageURL else {
+        guard let imageURL else {
             isLoading = false
             return
         }

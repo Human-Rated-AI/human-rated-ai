@@ -221,7 +221,6 @@ struct AISettingFormView<ViewModel: AISettingViewModel>: View {
                     Spacer()
                     let imageURL = viewModel.aiSetting.imageURL
                     AvatarView(imageURL: imageURL, width: 150, height: 150)
-                        .id("avatar-\(imageURL?.absoluteString ?? "default")-\(Date().timeIntervalSince1970)")
                     Spacer()
                 }
                 .padding(.vertical, 4)
