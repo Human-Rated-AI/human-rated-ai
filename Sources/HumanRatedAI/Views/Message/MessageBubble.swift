@@ -23,8 +23,7 @@ struct MessageBubble: View {
                 Spacer()
             } else {
                 // Bot avatar
-                AvatarView(imageURL: botImageURL, fallbackImageName: "person.circle.fill")
-                    .frame(width: 32, height: 32)
+                AvatarView(imageURL: botImageURL, width: 32, height: 32)
             }
             
             // Message bubble
@@ -37,8 +36,7 @@ struct MessageBubble: View {
             
             if message.isUser {
                 // User avatar (placeholder - this would use user's avatar in a real implementation)
-                AvatarView(imageURL: nil, fallbackImageName: "person.circle.fill")
-                    .frame(width: 32, height: 32)
+                AvatarView(imageURL: nil, width: 32, height: 32)
             } else {
                 Spacer()
             }

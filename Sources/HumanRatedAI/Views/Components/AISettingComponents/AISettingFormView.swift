@@ -215,41 +215,13 @@ struct AISettingFormView<ViewModel: AISettingViewModel>: View {
                     Spacer()
                 }
                 .padding(.vertical, 4)
-            } else if let imageURL = viewModel.aiSetting.imageURL {
-                // Show existing image preview from URL if available
-                VStack {
-                    HStack {
-                        Spacer()
-                        // Use ID modifier with counter to force refresh when URL changes
-                        CachedImage(url: imageURL) { imageData in
-                            if let image = UIImage(data: imageData) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                            }
-                        } placeholder: {
-                            ProgressView()
-                                .frame(width: 150, height: 150)
-                        }
-                        .id("cachedImage-\(imageURL.absoluteString)-\(viewModel.urlUpdateCounter)")
-                        .frame(width: 150, height: 150)
-                        .clipShape(Circle())
-                        Spacer()
-                    }
-                    Text("Image URL: \(imageURL.absoluteString)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
             } else {
                 // Show placeholder image when no image is selected
                 HStack {
                     Spacer()
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 150, height: 150)
-                        .foregroundColor(.gray)
+                    let imageURL = viewModel.aiSetting.imageURL
+                    AvatarView(imageURL: viewModel.aiSetting.imageURL, width: 150, height: 150)
+                        .id("cachedImage-\(imageURL?.absoluteString ?? "default")-\(viewModel.urlUpdateCounter)")
                     Spacer()
                 }
                 .padding(.vertical, 4)

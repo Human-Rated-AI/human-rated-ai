@@ -13,41 +13,30 @@ import SwiftUI
 
 struct AvatarView: View {
     let imageURL: URL?
-    let fallbackImageName: String
-    
-    @State private var imageData: Data? = nil
+    let fallbackImageName: String = "person.crop.circle.fill"
+    let width: CGFloat
+    let height: CGFloat
     
     var body: some View {
-        Group {
-            if let imageData, let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .clipShape(Circle())
-            } else {
-                Image(systemName: fallbackImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .foregroundColor(.gray)
-            }
-        }
-        .onAppear {
-            loadImage()
-        }
-    }
-    
-    private func loadImage() {
-        guard let imageURL else { return }
-        
-        Task {
-            do {
-                let data = try await StorageManager.shared.downloadData(from: imageURL.path)
-                await MainActor.run {
-                    self.imageData = data
+        if let imageURL {
+            CachedImage(url: imageURL) { imageData in
+                if let image = UIImage(data: imageData) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
                 }
-            } catch {
-                debug("FAIL", AvatarView.self, "to load image: \(error)")
+            } placeholder: {
+                ProgressView()
+                    .frame(width: width, height: height)
             }
+            .frame(width: width, height: height)
+            .clipShape(Circle())
+        } else {
+            Image(systemName: fallbackImageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: width, height: height)
+                .foregroundColor(.gray)
         }
     }
 }

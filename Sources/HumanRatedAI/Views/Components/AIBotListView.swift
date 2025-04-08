@@ -24,26 +24,7 @@ struct AIBotListView: View {
                 NavigationLink(destination: Text("Chat with \(bot.name)")) { // Placeholder destination
                     HStack(spacing: 15) {
                         // Image or placeholder
-                        if let imageURL = bot.imageURL {
-                            CachedImage(url: imageURL) { imageData in
-                                if let image = UIImage(data: imageData) {
-                                    Image(uiImage: image)
-                                        .resizable()
-                                        .scaledToFill()
-                                }
-                            } placeholder: {
-                                ProgressView()
-                                    .frame(width: 50, height: 50)
-                            }
-                            .frame(width: 50, height: 50)
-                            .clipShape(Circle())
-                        } else {
-                            Image(systemName: "person.crop.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 50, height: 50)
-                                .foregroundColor(.gray)
-                        }
+                        AvatarView(imageURL: bot.imageURL, width: 50, height: 50)
                         
                         // Bot details
                         VStack(alignment: .leading, spacing: 5) {
