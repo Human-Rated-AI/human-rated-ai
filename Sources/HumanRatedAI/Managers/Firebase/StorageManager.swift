@@ -41,30 +41,70 @@ extension StorageManager {
     /// Download data from Firebase Storage
     /// - Parameter path: The storage path to the file
     /// - Returns: The downloaded data
-    public func downloadData(from path: String) async throws -> Data {
-        let fileRef = storageRef.child(path)
-        let maxSize: Int64 = 10 * 1024 * 1024 // 10MB max size
-        
+    public func downloadData(from path: String, retryCount: Int = 2) async throws -> Data {
+        var lastError: Error?
+        for attempt in 0...retryCount {
+            do {
+                let fileRef = storageRef.child(path)
+                let maxSize: Int64 = 50 * 1024 * 1024 // 50MB max size
+                // Create a task with a timeout
+                let downloadTask = Task<Data, Error> {
 #if os(Android)
-        // Android (Skip) implementation uses getDataAsync
-        return try await fileRef.getDataAsync(maxSize: maxSize)
+                    return try await fileRef.getDataAsync(maxSize: maxSize)
 #else
-        // iOS native implementation uses data(maxSize:)
-        return try await withCheckedThrowingContinuation { continuation in
-            fileRef.getData(maxSize: maxSize) { data, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if let data {
-                    continuation.resume(returning: data)
-                } else {
-                    let noDataError = NSError(domain: "StorageError",
-                                              code: 404,
-                                              userInfo: [NSLocalizedDescriptionKey: "No data returned"])
-                    continuation.resume(throwing: noDataError)
+                    return try await withCheckedThrowingContinuation { continuation in
+                        fileRef.getData(maxSize: maxSize) { data, error in
+                            if let error {
+                                continuation.resume(throwing: error)
+                            } else if let data {
+                                continuation.resume(returning: data)
+                            } else {
+                                let noDataError = NSError(domain: "StorageError",
+                                                          code: 404,
+                                                          userInfo: [NSLocalizedDescriptionKey: "No data returned"])
+                                continuation.resume(throwing: noDataError)
+                            }
+                        }
+                    }
+#endif
+                }
+                // Create a timeout task
+                let timeoutTask = Task<Void, Never> {
+                    try? await Task.sleep(nanoseconds: UInt64(15 * 1_000_000_000))
+                    downloadTask.cancel()
+                }
+                do {
+                    // Wait for the download to complete
+                    let data = try await downloadTask.value
+                    // Success - cancel the timeout and return the data
+                    timeoutTask.cancel()
+                    return data
+                } catch {
+                    // Cancel the timeout task since we're handling the error
+                    timeoutTask.cancel()
+                    // Rethrow the error to be handled by the outer catch
+                    throw error
+                }
+            } catch {
+                // Check if the task was cancelled (timeout)
+                if Task.isCancelled || error is CancellationError {
+                    throw NSError(domain: "StorageError",
+                                  code: 408,
+                                  userInfo: [NSLocalizedDescriptionKey: "Operation timed out"])
+                }
+                // Store the error for potential retries
+                lastError = error
+                // Wait before retry if we're not on the last attempt
+                if attempt < retryCount {
+                    // Use exponential backoff
+                    try await Task.sleep(nanoseconds: UInt64(1_000_000_000 * (attempt + 1)))
                 }
             }
         }
-#endif
+        // If we've exhausted all retries, throw the last error
+        throw lastError ?? NSError(domain: "StorageError",
+                                   code: 500,
+                                   userInfo: [NSLocalizedDescriptionKey: "Unknown error during download"])
     }
     
     /// Get download URL for a file in Firebase Storage

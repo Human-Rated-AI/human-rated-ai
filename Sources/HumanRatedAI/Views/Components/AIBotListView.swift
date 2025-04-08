@@ -25,6 +25,7 @@ struct AIBotListView: View {
                     HStack(spacing: 15) {
                         // Image or placeholder
                         AvatarView(imageURL: bot.imageURL, width: 50, height: 50)
+                            .id("avatar-\(bot.id)-\(Date().timeIntervalSince1970)")
                         
                         // Bot details
                         VStack(alignment: .leading, spacing: 5) {

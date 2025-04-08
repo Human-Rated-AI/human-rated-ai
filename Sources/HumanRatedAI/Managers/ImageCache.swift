@@ -6,7 +6,7 @@
 //  ImageCache.swift
 //  human-rated-ai
 //
-//  Created by Denis Bystruev on 3/19/25.
+//  Created by Claude 3.7 Sonnet, Denis Bystruev on 3/19/25.
 //
 
 import Foundation
@@ -16,16 +16,46 @@ import SwiftUI
 public class ImageCache: ObservableObject {
     public static let shared = ImageCache()
     
-    @Published private var cache: [URL: Data] = [:]
+    // Simple cache structure with expiration times
+    private class CacheEntry {
+        let data: Data
+        let expirationTime: TimeInterval
+        
+        init(data: Data, expirationTime: TimeInterval) {
+            self.data = data
+            self.expirationTime = expirationTime
+        }
+        
+        var isExpired: Bool {
+            Date().timeIntervalSince1970 > expirationTime
+        }
+    }
+    
+    @Published private var cache = [String: CacheEntry]()
+    private let cacheExpirationSeconds: TimeInterval = 300 // 5 minutes
     
     private init() {}
     
     public func getImageData(for url: URL) -> Data? {
-        return cache[url]
+        let key = url.absoluteString
+        
+        // Clean expired cache entries when accessed
+        removeExpiredEntries()
+        
+        guard let entry = cache[key], !entry.isExpired else {
+            if cache[key] != nil {
+                cache.removeValue(forKey: key)
+            }
+            return nil
+        }
+        
+        return entry.data
     }
     
     public func setImageData(_ data: Data, for url: URL) {
-        cache[url] = data
+        let key = url.absoluteString
+        let expirationTime = Date().timeIntervalSince1970 + cacheExpirationSeconds
+        cache[key] = CacheEntry(data: data, expirationTime: expirationTime)
     }
     
     public func loadImage(from url: URL) async throws -> Data {
@@ -43,6 +73,14 @@ public class ImageCache: ObservableObject {
     public func clearCache() {
         cache.removeAll()
     }
+    
+    private func removeExpiredEntries() {
+        for (key, entry) in cache {
+            if entry.isExpired {
+                cache.removeValue(forKey: key)
+            }
+        }
+    }
 }
 
 // Create a reusable CachedImage view
@@ -53,6 +91,9 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
     
     @State private var imageData: Data?
     @State private var isLoading = false
+    @State private var loadTask: Task<Void, Never>?
+    @State private var retryCount = 0
+    private let maxRetries = 2
     
     public init(url: URL?,
                 @ViewBuilder content: @escaping (Data) -> Content,
@@ -73,22 +114,49 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
                     }
             }
         }
+        .onDisappear {
+            // Cancel the loading task when view disappears
+            loadTask?.cancel()
+            loadTask = nil
+        }
     }
     
     private func loadImage() {
-        guard isLoading.isFalse, let url else { return }
+        guard !isLoading, retryCount <= maxRetries, let url = url else { return }
+        
         isLoading = true
-        Task {
+        
+        // Cancel any existing task
+        loadTask?.cancel()
+        
+        // Create a new task
+        loadTask = Task {
             do {
                 let data = try await ImageCache.shared.loadImage(from: url)
-                await MainActor.run {
-                    self.imageData = data
-                    self.isLoading = false
+                
+                // Check if task was cancelled before updating UI
+                if !Task.isCancelled {
+                    await MainActor.run {
+                        self.imageData = data
+                        self.isLoading = false
+                    }
                 }
             } catch {
-                debug("FAIL", Self.self, "loading image: \(error)")
-                await MainActor.run {
-                    self.isLoading = false
+                // Only process error if task wasn't cancelled
+                if !Task.isCancelled {
+                    debug("FAIL", Self.self, "Error loading image: \(error.localizedDescription)")
+                    
+                    await MainActor.run {
+                        self.isLoading = false
+                        self.retryCount += 1
+                        
+                        // Try again after a delay if we haven't hit max retries
+                        if self.retryCount <= self.maxRetries {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + Double(self.retryCount)) {
+                                self.loadImage()
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -220,8 +220,8 @@ struct AISettingFormView<ViewModel: AISettingViewModel>: View {
                 HStack {
                     Spacer()
                     let imageURL = viewModel.aiSetting.imageURL
-                    AvatarView(imageURL: viewModel.aiSetting.imageURL, width: 150, height: 150)
-                        .id("cachedImage-\(imageURL?.absoluteString ?? "default")-\(viewModel.urlUpdateCounter)")
+                    AvatarView(imageURL: imageURL, width: 150, height: 150)
+                        .id("avatar-\(imageURL?.absoluteString ?? "default")-\(Date().timeIntervalSince1970)")
                     Spacer()
                 }
                 .padding(.vertical, 4)
