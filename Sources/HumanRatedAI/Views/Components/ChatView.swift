@@ -12,7 +12,6 @@
 import SwiftUI
 
 struct ChatView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
     @State var bot: AISetting
@@ -31,16 +30,7 @@ struct ChatView: View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 // Small model name at the top
-                HStack {
-                    Text(bot.name)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                    Spacer()
-                }
-                .background(colorScheme == .dark ? Color.black : Color.white)
-                Divider()
+                ChatHeader(botName: bot.name)
                 
                 // Chat area with messages
                 ScrollViewReader { proxy in
