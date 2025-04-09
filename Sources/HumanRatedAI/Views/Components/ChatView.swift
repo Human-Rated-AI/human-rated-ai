@@ -25,15 +25,7 @@ struct ChatView: View {
     @State private var messageText: String = ""
     @State private var messages: [Message] = []
     @State private var scrollProxy: ScrollViewProxy? = nil
-    
     let isUserBot: Bool
-    private var sendMessageIcon: String {
-#if os(Android)
-        "chevron.up"
-#else
-        "arrow.up.circle.fill"
-#endif
-    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -94,25 +86,7 @@ struct ChatView: View {
                 
                 Divider()
                 // Message input area
-                HStack(spacing: 12) {
-                    TextField("Type a message...", text: $messageText)
-                        .padding(10)
-                        .background(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1))
-                        .cornerRadius(20)
-                        .onSubmit {
-                            sendMessage()
-                        }
-                    
-                    Button(action: sendMessage) {
-                        Image(systemName: sendMessageIcon)
-                            .font(.system(size: 30))
-                            .foregroundColor(.blue)
-                    }
-                    .disabled(messageText.isEmptyTrimmed)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(colorScheme == .dark ? Color.black : Color.white)
+                MessageInput(messageText: $messageText, onSend: sendMessage)
             }
             .alert("Delete Bot", isPresented: $showDeleteAlert) {
                 Button("Cancel", role: .cancel) { }
