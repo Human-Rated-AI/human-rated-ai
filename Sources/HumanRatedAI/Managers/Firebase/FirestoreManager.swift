@@ -18,8 +18,7 @@ import SwiftUI
 
 public class FirestoreManager: ObservableObject {
     public static let shared = FirestoreManager()
-    private let db: Firestore
-    private init() { self.db = Firestore.firestore() }
+    private init() {}
 }
 
 // MARK: - AI Settings Public Methods
@@ -30,7 +29,7 @@ extension FirestoreManager {
     ///   - documentID: The Firestore document ID of the AI setting
     ///   - userID: The user ID who owns the AI setting
     public func deleteAISetting(documentID: String, userID: String) async throws {
-        let docRef = db.aiSettings.document(documentID)
+        let docRef = FirestoreQueries.getAISetting(documentID: documentID)
         let document = try await docRef.getDocument()
         guard document.exists,
               let data = document.data(),
@@ -47,7 +46,7 @@ extension FirestoreManager {
     /// - Parameter documentID: The Firestore document ID
     /// - Returns: The AI setting if found, nil otherwise
     public func getAISetting(documentID: String) async throws -> AISetting? {
-        let docRef = db.aiSettings.document(documentID)
+        let docRef = FirestoreQueries.getAISetting(documentID: documentID)
         let document = try await docRef.getDocument()
         guard document.exists else { return nil }
         return aiSettingFrom(document: document, withID: documentID)
@@ -56,7 +55,7 @@ extension FirestoreManager {
     /// Get all public AI settings (for browsing in the AI tab)
     /// - Returns: Array of AISetting objects
     public func getAllPublicAISettings() async throws -> AISettings {
-        let query = db.aiSettings.whereField(AISetting.CodingKeys.isPublic.rawValue, isEqualTo: true)
+        let query = FirestoreQueries.getAllPublicAISettings()
         let snapshot = try await query.getDocuments()
         return aiSettingsFrom(snapshot)
     }
@@ -65,7 +64,7 @@ extension FirestoreManager {
     /// - Parameter userID: The ID of the user
     /// - Returns: Array of AISetting objects
     public func getUserAISettings(userID: String) async throws -> AISettings {
-        let query = db.aiSettings.whereField("userID", isEqualTo: userID)
+        let query = FirestoreQueries.getUserAISettings(userID: userID)
         let snapshot = try await query.getDocuments()
         return aiSettingsFrom(snapshot)
     }
@@ -76,21 +75,8 @@ extension FirestoreManager {
     ///   - excludingBotID: Optional bot ID to exclude from the check
     /// - Returns: True if the image is used by other bots, false otherwise
     public func isImageUsedByOtherBots(imageURL: URL, excludingBotID: String? = nil) async throws -> Bool {
-        let urlString = imageURL.absoluteString
         // Build query for bots that use this image URL
-        var query = db.aiSettings
-            .whereField(AISetting.CodingKeys.imageURL.rawValue, isEqualTo: urlString)
-            .limit(to: 1) // We only need to know if at least one exists
-        // If we have a bot ID to exclude, add that to the query
-        if let excludingBotID {
-            // Note: For Firebase, we need to use a composite query or a different approach
-            // since not all platforms support not-equal queries directly
-            // Get the document ID field
-            let documentIDField = FieldPath.documentID()
-            // Add the condition to exclude specific bot ID
-            query = query.whereField(documentIDField, isNotEqualTo: excludingBotID)
-        }
-        // Execute query
+        let query = FirestoreQueries.isImageUsedByOtherBots(imageURL: imageURL, excludingBotID: excludingBotID)
         let snapshot = try await query.getDocuments()
         // If there's at least one document, the image is used by other bots
         return snapshot.documents.isNotEmpty
@@ -104,7 +90,7 @@ extension FirestoreManager {
     public func saveAISetting(_ aiSetting: AISetting, userID: String) async throws -> String {
         let data = prepareAISettingData(aiSetting, userID: userID, isUpdating: false)
         // Save to Firestore
-        let docRef = try await db.aiSettings.addDocument(data: data)
+        let docRef = try await FirestoreQueries.addAISetting(data: data)
         return docRef.documentID
     }
     
@@ -115,7 +101,7 @@ extension FirestoreManager {
     /// - Returns: Success flag
     public func updateAISetting(_ aiSetting: AISetting, userID: String) async throws -> Bool {
         // Verify the document exists and belongs to the user
-        let docRef = db.aiSettings.document(aiSetting.id)
+        let docRef = FirestoreQueries.getAISetting(documentID: aiSetting.id)
         let document = try await docRef.getDocument()
         guard document.exists,
               let data = document.data(),
@@ -157,7 +143,7 @@ extension FirestoreManager {
             "addedAt": FieldValue.serverTimestamp(),
             "settingID": documentID,
         ]
-        try await db.users.document(userID).collection("favorites").document(documentID).setData(data)
+        try await FirestoreQueries.userFavorite(userID: userID, documentID: documentID).setData(data)
     }
     
     /// Get user's favorite AI settings
@@ -165,7 +151,7 @@ extension FirestoreManager {
     /// - Returns: Array of AI settings that the user has favorited
     public func getUserFavorites(userID: String) async throws -> AISettings {
         // First get the IDs of favorited settings
-        let favoritesSnapshot = try await db.users.document(userID).collection("favorites").getDocuments()
+        let favoritesSnapshot = try await FirestoreQueries.userFavoritesCollection(userID: userID).getDocuments()
         let favoriteIDs = favoritesSnapshot.documents.compactMap { document in
             document.data()["settingID"] as? String
         }
@@ -182,7 +168,7 @@ extension FirestoreManager {
             var fetchTasks: [Task<AISetting?, Error>] = []
             for id in batch {
                 let task = Task<AISetting?, Error> {
-                    let docRef = db.aiSettings.document(id)
+                    let docRef = FirestoreQueries.getAISetting(documentID: id)
                     let doc = try await docRef.getDocument()
                     guard doc.exists else { return nil }
                     // Parse the document data into an AISetting
@@ -205,14 +191,14 @@ extension FirestoreManager {
     ///   - documentID: The Firestore document ID of the AI setting
     ///   - userID: The user ID
     public func removeFromFavorites(documentID: String, userID: String) async throws {
-        try await db.users.document(userID).collection("favorites").document(documentID).delete()
+        try await FirestoreQueries.userFavorite(userID: userID, documentID: documentID).delete()
     }
     
     // MARK: - Ratings
     /// Get all ratings (for showing in the UI)
     /// - Returns: Dictionary mapping AI setting IDs to their average ratings
     public func getAllRatings() async throws -> [String: Double] {
-        let snapshot = try await db.aiSettings.getDocuments()
+        let snapshot = try await FirestoreQueries.getAllAISettings()
         var ratingsDict: [String: Double] = [:]
         for document in snapshot.documents {
             let docID = document.documentID
@@ -227,7 +213,7 @@ extension FirestoreManager {
     /// - Parameter documentID: The Firestore document ID of the AI setting
     /// - Returns: The average rating or nil if no ratings exist
     public func getAverageRating(for documentID: String) async throws -> Double? {
-        let query = db.ratings.whereField("settingID", isEqualTo: documentID)
+        let query = FirestoreQueries.getRatingsForAISetting(documentID: documentID)
         let snapshot = try await query.getDocuments()
         if snapshot.documents.isEmpty { return nil }
         let total = snapshot.documents.reduce(Double(0)) { sum, document in
@@ -248,7 +234,7 @@ extension FirestoreManager {
                           userInfo: [NSLocalizedDescriptionKey: "Rating must be between 1 and 5"])
         }
         // Verify the setting exists
-        let docRef = db.aiSettings.document(documentID)
+        let docRef = FirestoreQueries.getAISetting(documentID: documentID)
         let document = try await docRef.getDocument()
         guard document.exists else {
             throw NSError(domain: "FirestoreError",
@@ -262,17 +248,10 @@ extension FirestoreManager {
             "userID": userID
         ]
         // Add to ratings collection
-        try await db.ratings.document("\(documentID)_\(userID)").setData(data)
+        try await FirestoreQueries.getUserRatingForAISetting(documentID: documentID, userID: userID).setData(data)
         // Update average rating for the AI setting
         await updateAverageRating(for: documentID)
     }
-}
-
-// MARK: - Private Helpers
-extension Firestore {
-    fileprivate var aiSettings: CollectionReference { collection("aiSettings") }
-    fileprivate var ratings: CollectionReference { collection("ratings") }
-    var users: CollectionReference { collection("users") }
 }
 
 // MARK: - AI Settings Data Helpers
@@ -364,7 +343,7 @@ private extension FirestoreManager {
     func updateAverageRating(for documentID: String) async {
         do {
             if let averageRating = try await getAverageRating(for: documentID) {
-                let docRef = db.aiSettings.document(documentID)
+                let docRef = FirestoreQueries.getAISetting(documentID: documentID)
                 try await docRef.updateData(["averageRating": averageRating])
             }
         } catch {
