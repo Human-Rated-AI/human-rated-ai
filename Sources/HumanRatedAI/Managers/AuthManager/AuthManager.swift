@@ -121,8 +121,7 @@ private extension AuthManager {
         // Using setData with merge:true works cross-platform and handles both create/update
         Task {
             do {
-                let db = Firestore.firestore()
-                try await db.users.document(uid).setData(userData, merge: true)
+                try await FirestoreQueries.getUser(userID: uid).setData(userData, merge: true)
             } catch {
                 debug("FAIL", Self.self, "Error updating user data: \(error.localizedDescription)")
             }
