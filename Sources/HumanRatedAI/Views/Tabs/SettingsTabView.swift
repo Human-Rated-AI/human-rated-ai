@@ -16,7 +16,8 @@ struct SettingsTabView: View {
     @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
     @EnvironmentObject var authManager: AuthManager
     @State var errorMessage = ""
-    @State var models = [String]()
+    @State var openaiModels = [String]()
+    @State var llamaModels = [String]()
     
     var body: some View {
         NavigationStack {
@@ -40,9 +41,17 @@ struct SettingsTabView: View {
                     }
                     
                 }
-                if models.isNotEmpty {
+                Section("AI Provider") {
+                    Text("Azure OpenAI")
+                        .foregroundStyle(.gray)
+                }
+                
+                if openaiModels.isNotEmpty {
                     Section("Models") {
-                        ListSettingsView(list: models)
+                        ForEach(openaiModels, id: \.self) { model in
+                            Text(model)
+                                .foregroundStyle(.gray)
+                        }
                     }
                 }
                 Section("Settings") {
@@ -71,22 +80,59 @@ struct SettingsTabView: View {
         }
         .navigationTitle("Settings")
         .onAppear {
-            Task {
-                do {
-                    let deployments = try await NetworkManager.ai?.getDeployments()
-                    if let deployments {
-                        let modelNames = deployments.map { "\($0.properties.model.name)" }
-                        models = Set(modelNames).sorted()
-                    }
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
-            }
+            fetchModels()
         }
     }
 }
 
 private extension SettingsTabView {
+    func fetchModels() {
+        Task {
+            do {
+                // Fetch deployments
+                let deployments = try await NetworkManager.ai?.getDeployments()
+                if let deployments {
+                    // Filter out only OpenAI models (exclude anything with "llama" in the name)
+                    var modelNames = [String]()
+                    
+                    for deployment in deployments {
+                        let modelName = "\(deployment.properties.model.name)"
+                        if !deployment.name.contains("llama") && !modelName.contains("llama") {
+                            modelNames.append(modelName)
+                        }
+                    }
+                    
+                    // Update model list on the main thread
+                    await MainActor.run {
+                        openaiModels = Set(modelNames).sorted()
+                    }
+                }
+                
+                // Also try to fetch models directly
+                let models = try await NetworkManager.ai?.getModels()
+                if let models, models.isNotEmpty {
+                    // Filter out only OpenAI models (exclude anything with "llama")
+                    var modelNames = [String]()
+                    
+                    for model in models {
+                        if !model.contains("llama") {
+                            modelNames.append(model)
+                        }
+                    }
+                    
+                    // Add any models not already in the deployments list
+                    await MainActor.run {
+                        openaiModels = Set(openaiModels + modelNames).sorted()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
     var aiInfo: [String] {
         [aiEnvironmentManager.aiModel ?? "unknown"]
     }

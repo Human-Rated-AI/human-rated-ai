@@ -14,6 +14,7 @@ import SwiftUI
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
+    @StateObject private var chatManager = ChatManager()
     @State var bot: AISetting
     @State private var deleteError: String?
     @State private var isDeleting = false
@@ -22,7 +23,6 @@ struct ChatView: View {
     @State private var showEditView = false
     @State private var showErrorAlert = false
     @State private var messageText: String = ""
-    @State private var messages: [Message] = []
     @State private var scrollProxy: ScrollViewProxy? = nil
     let isUserBot: Bool
     
@@ -36,7 +36,7 @@ struct ChatView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(messages) { message in
+                            ForEach(chatManager.messages) { message in
                                 MessageBubble(
                                     message: message,
                                     botImageURL: bot.imageURL,
@@ -50,10 +50,10 @@ struct ChatView: View {
                     .onAppear {
                         scrollProxy = proxy
                         // Add welcome message if messages array is empty
-                        if messages.isEmpty {
+                        if chatManager.messages.isEmpty {
                             let welcome = bot.welcome?.nonEmptyTrimmed ?? "Welcome to \(bot.name)!"
                             let welcomeMessage = Message(content: welcome, isUser: false, timestamp: Date())
-                            messages.append(welcomeMessage)
+                            chatManager.messages.append(welcomeMessage)
                             // Scroll to the welcome message
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 withAnimation {
@@ -62,9 +62,9 @@ struct ChatView: View {
                             }
                         }
                     }
-                    .onChange(of: messages) { _ in
+                    .onChange(of: chatManager.messages) { _ in
                         // Scroll to the latest message
-                        if let lastMessage = messages.last {
+                        if let lastMessage = chatManager.messages.last {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 withAnimation {
                                     scrollProxy?.scrollTo(lastMessage.id, anchor: .bottom)
@@ -76,7 +76,10 @@ struct ChatView: View {
                 
                 Divider()
                 // Message input area
-                MessageInput(messageText: $messageText, onSend: sendMessage)
+                MessageInput(messageText: $messageText, onSend: sendMessage, isLoading: chatManager.isProcessing)
+            }
+            .onChange(of: chatManager.error) { newError in
+                showErrorAlert = newError != nil
             }
             .alert("Delete Bot", isPresented: $showDeleteAlert) {
                 Button("Cancel", role: .cancel) { }
@@ -89,7 +92,7 @@ struct ChatView: View {
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text(deleteError ?? "Unknown error occurred")
+                Text(chatManager.error ?? deleteError ?? "Unknown error occurred")
             }
 #if os(Android)
             .sheet(isPresented: $showEditSheet) {
@@ -138,27 +141,20 @@ struct ChatView: View {
     }
     
     private func sendMessage() {
-        guard let trimmedMessage = messageText.nonEmptyTrimmed else { return }
-        
-        // Add user message
-        let userMessage = Message(content: trimmedMessage, isUser: true, timestamp: Date())
-        messages.append(userMessage)
+        guard let trimmedMessage = messageText.nonEmptyTrimmed, !chatManager.isProcessing else { return }
         
         // Clear input field
         messageText = ""
         
-        // Simulate bot response (in a real app, this would call an AI service)
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(1)) {
-            simulateBotResponse(to: trimmedMessage)
+        // Send message to AI through ChatManager
+        Task {
+            do {
+                _ = try await chatManager.sendMessage(trimmedMessage, bot: bot)
+            } catch {
+                // Error will be handled by the ChatManager and displayed in the UI
+                showErrorAlert = chatManager.error != nil
+            }
         }
-    }
-    
-    private func simulateBotResponse(to userMessage: String) {
-        // In a real implementation, this would call the AI service
-        // For now, just return a simple response
-        let responseContent = "This is a simulated response from \(bot.name). In a real implementation, this would be a response from the AI model. You said: \"\(userMessage)\""
-        let botMessage = Message(content: responseContent, isUser: false, timestamp: Date())
-        messages.append(botMessage)
     }
 }
 

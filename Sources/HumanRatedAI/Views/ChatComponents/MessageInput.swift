@@ -15,6 +15,7 @@ struct MessageInput: View {
     @Binding var messageText: String
     @Environment(\.colorScheme) private var colorScheme
     let onSend: () -> Void
+    var isLoading: Bool = false
     
     private var sendMessageIcon: String {
 #if os(Android)
@@ -31,15 +32,23 @@ struct MessageInput: View {
                 .background(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1))
                 .cornerRadius(20)
                 .onSubmit {
-                    onSend()
+                    if !isLoading && !messageText.isEmptyTrimmed {
+                        onSend()
+                    }
                 }
+                .disabled(isLoading)
             
-            Button(action: onSend) {
-                Image(systemName: sendMessageIcon)
-                    .font(.system(size: 30))
-                    .foregroundColor(.blue)
+            if isLoading {
+                ProgressView()
+                    .padding(8)
+            } else {
+                Button(action: onSend) {
+                    Image(systemName: sendMessageIcon)
+                        .font(.system(size: 30))
+                        .foregroundColor(.blue)
+                }
+                .disabled(messageText.isEmptyTrimmed)
             }
-            .disabled(messageText.isEmptyTrimmed)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)

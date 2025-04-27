@@ -101,3 +101,12 @@ extension Deployment: Comparable {
 public struct DeploymentsWrapper: Codable {
     let value: [Deployment]
 }
+
+// MARK: - Models Response
+public struct ModelsResponse: Codable {
+    let data: [Model]
+    
+    struct Model: Codable {
+        let id: String
+    }
+}
