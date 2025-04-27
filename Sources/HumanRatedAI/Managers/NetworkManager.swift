@@ -103,18 +103,12 @@ extension NetworkManager {
         
         // Handle parameters in a way that avoids [String: Any] casts
         if var params = parameters {
-            // Add provider if not specified
-            if params["provider"] == nil {
-                let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
-                let defaultProvider = EnvironmentManager.ai.aiProvider
-                params["provider"] = savedProvider ?? defaultProvider
-            }
+            // Remove provider if specified to avoid sending it to the server
+            params["provider"] = nil
             body["params"] = params
         } else {
-            // No parameters provided, create new params with provider
-            let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
-            let defaultProvider = EnvironmentManager.ai.aiProvider
-            body["params"] = ["provider": savedProvider ?? defaultProvider]
+            // No parameters provided, create new params but without provider
+            body["params"] = [String: Any]()
         }
         
         // Send the request
@@ -131,15 +125,11 @@ extension NetworkManager {
     // Analyze image with AI vision
     func analyzeImage(imageURL: URL, prompt: String? = nil, parameters: [String: Any]? = nil) async throws -> String {
         // Start with clean parameters
-        var params = parameters ?? [:]
+        var params = parameters ?? [String: Any]()
         params["isVision"] = true
         
-        // Add default provider if not specified
-        if params["provider"] == nil {
-            let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
-            let defaultProvider = EnvironmentManager.ai.aiProvider
-            params["provider"] = savedProvider ?? defaultProvider
-        }
+        // Remove provider parameter if specified
+        params["provider"] = nil
         
         // Create messages in the format expected by the server
         let messageContent: [[String: Any]] = [

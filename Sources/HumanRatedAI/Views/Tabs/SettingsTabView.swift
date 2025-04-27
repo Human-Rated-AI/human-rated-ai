@@ -18,7 +18,6 @@ struct SettingsTabView: View {
     @State var errorMessage = ""
     @State var openaiModels = [String]()
     @State var llamaModels = [String]()
-    @State var aiProvider = UserDefaults.standard.string(forKey: "aiProvider") ?? "openai"
     
     var body: some View {
         NavigationStack {
@@ -43,41 +42,15 @@ struct SettingsTabView: View {
                     
                 }
                 Section("AI Provider") {
-                    Picker("Provider", selection: $aiProvider) {
-                        Text("Azure OpenAI").tag("openai")
-                        Text("Meta Llama").tag("llama")
-                    }
-                    .onChange(of: aiProvider) { newValue in
-                        UserDefaults.standard.set(newValue, forKey: "aiProvider")
-                        // Force UI update when provider changes
-                        if newValue == "openai" {
-                            // If there are no OpenAI models yet, try to fetch them
-                            if openaiModels.isEmpty {
-                                fetchModels()
-                            }
-                        } else if newValue == "llama" {
-                            // If there are no Llama models yet, try to fetch them
-                            if llamaModels.isEmpty {
-                                fetchModels()
-                            }
-                        }
-                    }
+                    Text("Azure OpenAI")
+                        .foregroundStyle(.gray)
                 }
                 
-                if openaiModels.isNotEmpty || llamaModels.isNotEmpty {
+                if openaiModels.isNotEmpty {
                     Section("Models") {
-                        if aiProvider == "openai" && openaiModels.isNotEmpty {
-                            Text("Azure OpenAI").bold()
-                            ForEach(openaiModels, id: \.self) { model in
-                                Text(model)
-                                    .foregroundStyle(.gray)
-                            }
-                        } else if aiProvider == "llama" && llamaModels.isNotEmpty {
-                            Text("Meta Llama").bold()
-                            ForEach(llamaModels, id: \.self) { model in
-                                Text(model)
-                                    .foregroundStyle(.gray)
-                            }
+                        ForEach(openaiModels, id: \.self) { model in
+                            Text(model)
+                                .foregroundStyle(.gray)
                         }
                     }
                 }
@@ -119,45 +92,37 @@ private extension SettingsTabView {
                 // Fetch deployments
                 let deployments = try await NetworkManager.ai?.getDeployments()
                 if let deployments {
-                    // Filter deployments by provider
-                    var azureDeployments = [String]()
-                    var metaDeployments = [String]()
+                    // Filter out only OpenAI models (exclude anything with "llama" in the name)
+                    var modelNames = [String]()
                     
                     for deployment in deployments {
                         let modelName = "\(deployment.properties.model.name)"
-                        if deployment.name.contains("llama") || modelName.contains("llama") {
-                            metaDeployments.append(modelName)
-                        } else {
-                            azureDeployments.append(modelName)
+                        if !deployment.name.contains("llama") && !modelName.contains("llama") {
+                            modelNames.append(modelName)
                         }
                     }
                     
-                    // Update model lists on the main thread
+                    // Update model list on the main thread
                     await MainActor.run {
-                        openaiModels = Set(azureDeployments).sorted()
-                        llamaModels = Set(metaDeployments).sorted()
+                        openaiModels = Set(modelNames).sorted()
                     }
                 }
                 
                 // Also try to fetch models directly
                 let models = try await NetworkManager.ai?.getModels()
                 if let models, models.isNotEmpty {
-                    // Filter models by provider
-                    var azureModels = [String]()
-                    var metaModels = [String]()
+                    // Filter out only OpenAI models (exclude anything with "llama")
+                    var modelNames = [String]()
                     
                     for model in models {
-                        if model.contains("llama") {
-                            metaModels.append(model)
-                        } else {
-                            azureModels.append(model)
+                        if !model.contains("llama") {
+                            modelNames.append(model)
                         }
                     }
                     
-                    // Add any models not already in the deployments lists
+                    // Add any models not already in the deployments list
                     await MainActor.run {
-                        openaiModels = Set(openaiModels + azureModels).sorted()
-                        llamaModels = Set(llamaModels + metaModels).sorted()
+                        openaiModels = Set(openaiModels + modelNames).sorted()
                     }
                 }
             } catch {

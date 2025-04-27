@@ -22,9 +22,11 @@ class ChatManager: ObservableObject {
     
     // Send a message to the AI service
     func sendMessage(_ text: String, bot: AISetting) async throws -> String {
-        isProcessing = true
-        error = nil
-        defer { isProcessing = false }
+        // Update state on main thread
+        await MainActor.run {
+            isProcessing = true
+            error = nil
+        }
         
         // Add user message to conversation
         let userMessage = Message(content: text, isUser: true, timestamp: Date())
@@ -34,7 +36,7 @@ class ChatManager: ObservableObject {
         
         do {
             // Prepare parameters with current deployment
-            var params: [String: Any] = [:]
+            var params: [String: Any] = [String: Any]()
             
             // Add prefix if available
             if let prefix = bot.prefix, !prefix.isEmpty {
@@ -59,14 +61,19 @@ class ChatManager: ObservableObject {
                 let assistantMessage = Message(content: response, isUser: false, timestamp: Date())
                 await MainActor.run {
                     messages.append(assistantMessage)
+                    isProcessing = false // Set isProcessing to false on main thread
                 }
                 return response
             } else {
+                await MainActor.run {
+                    isProcessing = false // Set isProcessing to false on main thread
+                }
                 throw NSError(domain: "ChatManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "No response received"])
             }
         } catch {
             await MainActor.run {
                 self.error = error.localizedDescription
+                isProcessing = false // Set isProcessing to false on main thread
             }
             throw error
         }
@@ -74,13 +81,18 @@ class ChatManager: ObservableObject {
     
     // Send an image for analysis
     func sendImage(_ image: UIImage, prompt: String? = nil, bot: AISetting) async throws -> String {
-        isProcessing = true
-        error = nil
-        defer { isProcessing = false }
+        // Update state on main thread
+        await MainActor.run {
+            isProcessing = true
+            error = nil
+        }
         
         do {
             // Only proceed if there's a user
             guard let user = authManager.user else {
+                await MainActor.run {
+                    isProcessing = false
+                }
                 throw NSError(domain: "ChatManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
             }
             
@@ -99,7 +111,7 @@ class ChatManager: ObservableObject {
             )
             
             // Prepare parameters
-            var params: [String: Any] = [:]
+            var params: [String: Any] = [String: Any]()
             
             // Add system prompt if available
             if let desc = bot.desc, !desc.isEmpty {
@@ -117,14 +129,19 @@ class ChatManager: ObservableObject {
                 await MainActor.run {
                     messages.append(Message(content: visionPrompt, isUser: true, timestamp: Date()))
                     messages.append(Message(content: response, isUser: false, timestamp: Date()))
+                    isProcessing = false // Set isProcessing to false on main thread
                 }
                 return response
             } else {
+                await MainActor.run {
+                    isProcessing = false // Set isProcessing to false on main thread
+                }
                 throw NSError(domain: "ChatManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "No response received"])
             }
         } catch {
             await MainActor.run {
                 self.error = error.localizedDescription
+                isProcessing = false // Set isProcessing to false on main thread
             }
             throw error
         }
