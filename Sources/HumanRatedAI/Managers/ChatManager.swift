@@ -56,9 +56,6 @@ class ChatManager: ObservableObject {
         }
         
         do {
-            // Prepare parameters with current deployment
-            var params: [String: Any] = [String: Any]()
-            
             // Get current date and time
             let dateTime = getCurrentDateTime()
             
@@ -114,8 +111,7 @@ class ChatManager: ObservableObject {
             
             // Send request to AI server with history
             let response = try await networkManager?.sendChatWithHistory(
-                messages: historyMessages,
-                parameters: params
+                messages: historyMessages
             )
             
             // Add AI response to conversation
@@ -141,7 +137,7 @@ class ChatManager: ObservableObject {
         }
     }
     
-    // Send an image for analysis
+    // Send an image for analysis using conversation history
     func sendImage(_ image: UIImage, prompt: String? = nil, bot: AISetting) async throws -> String {
         // Update state on main thread
         await MainActor.run {
@@ -172,25 +168,65 @@ class ChatManager: ObservableObject {
                 compressionQuality: 0.8
             )
             
-            // Prepare parameters
-            var params: [String: Any] = [String: Any]()
-            
             // Get current date and time
             let dateTime = getCurrentDateTime()
             
-            // Add system prompt if available
+            // Add system prompt if available, with date and time
             var systemPrompt = bot.desc ?? ""
             if !systemPrompt.isEmpty {
                 systemPrompt = systemPrompt.replacingOccurrences(of: "${DATE}", with: dateTime.date)
                 systemPrompt = systemPrompt.replacingOccurrences(of: "${TIME}", with: dateTime.time)
-                params["system"] = systemPrompt
             }
             
-            // Add caption (vision prompt) if available
+            // Prepare conversation history for the API
+            var historyMessages = [MessageModel]()
+            
+            // Add system message if available
+            if !systemPrompt.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: systemPrompt))
+            }
+            
+            // Add prefix if available
+            if let prefix = bot.prefix, !prefix.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: prefix))
+            }
+            
+            // Add conversation history
+            // Get previous messages
+            let previousMessagesArray = Array(messages)
+            
+            // Limit to maximum allowed messages
+            let limitedMessages = previousMessagesArray.suffix(MAX_HISTORY_MESSAGES - 1)
+            
+            // Convert to API message models
+            limitedMessages.forEach { message in
+                historyMessages.append(MessageModel(
+                    role: message.isUser ? "user" : "assistant",
+                    content: message.content,
+                    timestamp: message.timestamp
+                ))
+            }
+            
+            // Add suffix if available
+            if let suffix = bot.suffix, !suffix.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: suffix))
+            }
+            
+            // Add vision prompt
             let visionPrompt = bot.caption?.nonEmptyTrimmed ?? prompt ?? "Please describe what you see in this image"
             
-            // Send the image for analysis
-            let response = try await networkManager?.analyzeImage(imageURL: imageURL, prompt: visionPrompt, parameters: params)
+            // Log history messages for debugging
+            debug("INFO", ChatManager.self, "Sending image with \(historyMessages.count) history messages to AI")
+            historyMessages.forEach { message in
+                debug("DEBUG", ChatManager.self, "[\(message.role)]: \(message.content.prefix(50))\(message.content.count > 50 ? "..." : "")")
+            }
+            
+            // Send request to AI server with history and image
+            let response = try await networkManager?.sendImageWithHistory(
+                imageURL: imageURL,
+                prompt: visionPrompt,
+                messages: historyMessages
+            )
             
             // Add the exchange to conversation 
             if let response = response {

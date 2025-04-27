@@ -163,21 +163,50 @@ extension NetworkManager {
     }
     
     // Send a message with history to the AI
-    func sendChatWithHistory(messages: [MessageModel], parameters: [String: Any]? = nil) async throws -> String {
+    func sendChatWithHistory(messages: [MessageModel]) async throws -> String {
         // Start with basic request body
         var body: [String: Any] = [
             "client_key": EnvironmentManager.ai.aiKey?.md5 ?? "",
-            "messages": messages.map { $0.toDictionary() }
+            "messages": messages.map { $0.toDictionary() },
+            "params": [String: Any]()
         ]
         
-        // Handle parameters
-        if var params = parameters {
-            // Remove provider if specified
-            params["provider"] = nil
-            body["params"] = params
-        } else {
-            body["params"] = [String: Any]()
+        // Send the request
+        let data = try await postRequest("openai", body: body)
+        
+        // Convert data to string
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
         }
+        
+        return responseString
+    }
+    
+    // Send an image with history to the AI
+    func sendImageWithHistory(imageURL: URL, prompt: String, messages: [MessageModel]) async throws -> String {
+        // Start with basic request body
+        var body: [String: Any] = [
+            "client_key": EnvironmentManager.ai.aiKey?.md5 ?? ""
+        ]
+        
+        // Create the image message with content array
+        let imageMessage: [String: Any] = [
+            "role": "user",
+            "content": [
+                ["type": "image_url", "image_url": ["url": imageURL.absoluteString]],
+                ["type": "text", "text": prompt]
+            ]
+        ]
+        
+        // Add image message to history
+        let allMessages = messages.map { $0.toDictionary() }
+        var messagesForAPI = allMessages
+        messagesForAPI.append(imageMessage)
+        
+        body["messages"] = messagesForAPI
+        
+        // Set vision flag in parameters
+        body["params"] = ["isVision": true]
         
         // Send the request
         let data = try await postRequest("openai", body: body)
