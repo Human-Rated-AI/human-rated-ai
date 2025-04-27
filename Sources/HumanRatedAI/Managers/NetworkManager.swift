@@ -95,15 +95,71 @@ extension NetworkManager {
     
     // Send a text prompt to the AI
     func sendTextPrompt(prompt: String, parameters: [String: Any]? = nil) async throws -> String {
+        // Start with basic request body
         var body: [String: Any] = [
             "client_key": EnvironmentManager.ai.aiKey?.md5 ?? "",
             "prompt": prompt
         ]
         
-        // Add parameters if provided
-        if let parameters = parameters {
-            body["params"] = parameters
+        // Handle parameters in a way that avoids [String: Any] casts
+        if var params = parameters {
+            // Add provider if not specified
+            if params["provider"] == nil {
+                let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
+                let defaultProvider = EnvironmentManager.ai.aiProvider
+                params["provider"] = savedProvider ?? defaultProvider
+            }
+            body["params"] = params
+        } else {
+            // No parameters provided, create new params with provider
+            let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
+            let defaultProvider = EnvironmentManager.ai.aiProvider
+            body["params"] = ["provider": savedProvider ?? defaultProvider]
         }
+        
+        // Send the request
+        let data = try await postRequest("openai", body: body)
+        
+        // Convert data to string
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        return responseString
+    }
+    
+    // Analyze image with AI vision
+    func analyzeImage(imageURL: URL, prompt: String? = nil, parameters: [String: Any]? = nil) async throws -> String {
+        // Start with clean parameters
+        var params = parameters ?? [:]
+        params["isVision"] = true
+        
+        // Add default provider if not specified
+        if params["provider"] == nil {
+            let savedProvider = UserDefaults.standard.string(forKey: "aiProvider")
+            let defaultProvider = EnvironmentManager.ai.aiProvider
+            params["provider"] = savedProvider ?? defaultProvider
+        }
+        
+        // Create messages in the format expected by the server
+        let messageContent: [[String: Any]] = [
+            ["type": "image_url", "image_url": ["url": imageURL.absoluteString]],
+            ["type": "text", "text": prompt ?? "Please describe this image"]
+        ]
+        
+        let messages: [[String: Any]] = [
+            [
+                "role": "user",
+                "content": messageContent
+            ]
+        ]
+        
+        // Prepare the request body
+        let body: [String: Any] = [
+            "client_key": EnvironmentManager.ai.aiKey?.md5 ?? "",
+            "messages": messages,
+            "params": params
+        ]
         
         // Send the request
         let data = try await postRequest("openai", body: body)

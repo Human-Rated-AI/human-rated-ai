@@ -16,7 +16,9 @@ struct SettingsTabView: View {
     @EnvironmentObject var aiEnvironmentManager: EnvironmentManager
     @EnvironmentObject var authManager: AuthManager
     @State var errorMessage = ""
-    @State var models = [String]()
+    @State var openaiModels = [String]()
+    @State var llamaModels = [String]()
+    @State var aiProvider = UserDefaults.standard.string(forKey: "aiProvider") ?? "openai"
     
     var body: some View {
         NavigationStack {
@@ -40,9 +42,32 @@ struct SettingsTabView: View {
                     }
                     
                 }
-                if models.isNotEmpty {
+                Section("AI Provider") {
+                    Picker("Provider", selection: $aiProvider) {
+                        Text("Azure OpenAI").tag("openai")
+                        Text("Meta Llama").tag("llama")
+                    }
+                    .onChange(of: aiProvider) { newValue in
+                        UserDefaults.standard.set(newValue, forKey: "aiProvider")
+                    }
+                }
+                
+                if openaiModels.isNotEmpty || llamaModels.isNotEmpty {
                     Section("Models") {
-                        ListSettingsView(list: models)
+                        if openaiModels.isNotEmpty {
+                            Text("Azure OpenAI").bold()
+                            ForEach(openaiModels, id: \.self) { model in
+                                Text(model)
+                                    .foregroundStyle(.gray)
+                            }
+                        }
+                        if llamaModels.isNotEmpty {
+                            Text("Meta Llama").bold()
+                            ForEach(llamaModels, id: \.self) { model in
+                                Text(model)
+                                    .foregroundStyle(.gray)
+                            }
+                        }
                     }
                 }
                 Section("Settings") {
@@ -73,10 +98,44 @@ struct SettingsTabView: View {
         .onAppear {
             Task {
                 do {
+                    // Fetch deployments
                     let deployments = try await NetworkManager.ai?.getDeployments()
                     if let deployments {
-                        let modelNames = deployments.map { "\($0.properties.model.name)" }
-                        models = Set(modelNames).sorted()
+                        // Filter deployments by provider
+                        var azureDeployments = [String]()
+                        var metaDeployments = [String]()
+                        
+                        for deployment in deployments {
+                            let modelName = "\(deployment.properties.model.name)"
+                            if deployment.name.contains("llama") || modelName.contains("llama") {
+                                metaDeployments.append(modelName)
+                            } else {
+                                azureDeployments.append(modelName)
+                            }
+                        }
+                        
+                        openaiModels = Set(azureDeployments).sorted()
+                        llamaModels = Set(metaDeployments).sorted()
+                    }
+                    
+                    // Also try to fetch models directly
+                    let models = try await NetworkManager.ai?.getModels()
+                    if let models, models.isNotEmpty {
+                        // Filter models by provider
+                        var azureModels = [String]()
+                        var metaModels = [String]()
+                        
+                        for model in models {
+                            if model.contains("llama") {
+                                metaModels.append(model)
+                            } else {
+                                azureModels.append(model)
+                            }
+                        }
+                        
+                        // Add any models not already in the deployments lists
+                        openaiModels = Set(openaiModels + azureModels).sorted()
+                        llamaModels = Set(llamaModels + metaModels).sorted()
                     }
                 } catch {
                     errorMessage = error.localizedDescription

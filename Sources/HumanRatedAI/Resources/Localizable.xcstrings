@@ -16,6 +16,9 @@
     "AI Configuration" : {
 
     },
+    "AI Provider" : {
+
+    },
     "App" : {
 
     },
@@ -48,6 +51,9 @@
       }
     },
     "Are you sure you want to delete %@? This action cannot be undone." : {
+
+    },
+    "Azure OpenAI" : {
 
     },
     "Basic Information" : {
@@ -259,6 +265,9 @@
     "Make Public" : {
 
     },
+    "Meta Llama" : {
+
+    },
     "Models" : {
 
     },
@@ -341,6 +350,9 @@
       }
     },
     "Prefix Instructions" : {
+
+    },
+    "Provider" : {
 
     },
     "Public" : {

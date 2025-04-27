@@ -26,9 +26,11 @@ extension EnvironmentManager {
     private struct Keys {
         static let aiKey = "AI_KEY"
         static let aiModel = "AI_MODEL"
+        static let aiProvider = "AI_PROVIDER"
         static let aiURL = "AI_URL"
+        static let aiVisionEnabled = "AI_VISION_ENABLED"
         static let oauthClientID = "OAUTH_CLIENT_ID"
-        static var all: [String] { [Keys.aiKey, Keys.aiModel, Keys.aiURL, Keys.oauthClientID] }
+        static var all: [String] { [Keys.aiKey, Keys.aiModel, Keys.aiProvider, Keys.aiURL, Keys.aiVisionEnabled, Keys.oauthClientID] }
     }
     private static var _ai: EnvironmentManager?
     static var ai: EnvironmentManager {
@@ -39,7 +41,9 @@ extension EnvironmentManager {
     }
     var aiKey: String? { variables[Keys.aiKey] ?? nil }
     var aiModel: String? { variables[Keys.aiModel] ?? nil }
+    var aiProvider: String? { variables[Keys.aiProvider] ?? "openai" }
     var aiURL: URL? { (variables[Keys.aiURL] ?? nil)?.asURL }
+    var aiVisionEnabled: Bool { (variables[Keys.aiVisionEnabled] ?? "true") == "true" }
     var oauthClientID: String? { variables[Keys.oauthClientID] ?? nil }
 }
 
