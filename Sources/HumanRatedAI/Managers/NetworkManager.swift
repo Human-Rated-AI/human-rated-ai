@@ -161,4 +161,32 @@ extension NetworkManager {
         
         return responseString
     }
+    
+    // Send a message with history to the AI
+    func sendChatWithHistory(messages: [MessageModel], parameters: [String: Any]? = nil) async throws -> String {
+        // Start with basic request body
+        var body: [String: Any] = [
+            "client_key": EnvironmentManager.ai.aiKey?.md5 ?? "",
+            "messages": messages.map { $0.toDictionary() }
+        ]
+        
+        // Handle parameters
+        if var params = parameters {
+            // Remove provider if specified
+            params["provider"] = nil
+            body["params"] = params
+        } else {
+            body["params"] = [String: Any]()
+        }
+        
+        // Send the request
+        let data = try await postRequest("openai", body: body)
+        
+        // Convert data to string
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            throw URLError(.badServerResponse)
+        }
+        
+        return responseString
+    }
 }

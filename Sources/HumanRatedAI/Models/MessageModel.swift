@@ -46,6 +46,24 @@ struct MessageModel: Codable {
             timestamp: timestamp != nil ? Date(timeIntervalSince1970: TimeInterval(timestamp!)) : Date()
         )
     }
+    
+    /// Convert to a dictionary for API requests
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [
+            "role": role,
+            "content": content
+        ]
+        
+        if let timestamp = timestamp {
+            dict["timestamp"] = timestamp
+        }
+        
+        if let deployment = deployment {
+            dict["deployment"] = deployment
+        }
+        
+        return dict
+    }
 }
 
 typealias MessageModels = [MessageModel]

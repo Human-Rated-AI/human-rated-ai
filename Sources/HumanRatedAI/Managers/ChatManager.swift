@@ -13,14 +13,35 @@ import Foundation
 import SwiftUI
 
 class ChatManager: ObservableObject {
+    // Constants
+    private let MAX_HISTORY_MESSAGES = 25
+    
+    // Published properties
     @Published var messages: [Message] = []
     @Published var isProcessing = false
     @Published var error: String?
     
+    // Dependencies
     private let authManager = AuthManager.shared
     private let networkManager = NetworkManager.ai
     
-    // Send a message to the AI service
+    // Get current date and time for system message
+    private func getCurrentDateTime() -> (date: String, time: String) {
+        let now = Date()
+        let dateFormatter = DateFormatter()
+        
+        dateFormatter.dateStyle = .long
+        dateFormatter.timeStyle = .none
+        let date = dateFormatter.string(from: now)
+        
+        dateFormatter.dateStyle = .none
+        dateFormatter.timeStyle = .short
+        let time = dateFormatter.string(from: now)
+        
+        return (date, time)
+    }
+    
+    // Send a message to the AI service using conversation history
     func sendMessage(_ text: String, bot: AISetting) async throws -> String {
         // Update state on main thread
         await MainActor.run {
@@ -38,23 +59,64 @@ class ChatManager: ObservableObject {
             // Prepare parameters with current deployment
             var params: [String: Any] = [String: Any]()
             
+            // Get current date and time
+            let dateTime = getCurrentDateTime()
+            
+            // Add system prompt if available, with date and time
+            var systemPrompt = bot.desc ?? ""
+            if !systemPrompt.isEmpty {
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${DATE}", with: dateTime.date)
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${TIME}", with: dateTime.time)
+            }
+            
+            // Prepare conversation history for the API
+            var historyMessages = [MessageModel]()
+            
+            // Add system message if available
+            if !systemPrompt.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: systemPrompt))
+            }
+            
             // Add prefix if available
             if let prefix = bot.prefix, !prefix.isEmpty {
-                params["prefix"] = prefix
+                historyMessages.append(MessageModel(role: "system", content: prefix))
             }
+            
+            // Add conversation history
+            // Get previous messages (excluding the current user message we just added)
+            let previousMessagesArray = Array(messages.dropLast())
+            
+            // Limit to maximum allowed messages
+            let limitedMessages = previousMessagesArray.suffix(MAX_HISTORY_MESSAGES - 1)
+            
+            // Convert to API message models
+            limitedMessages.forEach { message in
+                historyMessages.append(MessageModel(
+                    role: message.isUser ? "user" : "assistant",
+                    content: message.content,
+                    timestamp: message.timestamp
+                ))
+            }
+            
+            // Add the current user message
+            historyMessages.append(MessageModel(role: "user", content: text, timestamp: Date()))
             
             // Add suffix if available
             if let suffix = bot.suffix, !suffix.isEmpty {
-                params["suffix"] = suffix
+                historyMessages.append(MessageModel(role: "system", content: suffix))
             }
             
-            // Add system prompt if available
-            if let desc = bot.desc, !desc.isEmpty {
-                params["system"] = desc
+            // Log history messages for debugging
+            debug("INFO", ChatManager.self, "Sending \(historyMessages.count) messages to AI")
+            historyMessages.forEach { message in
+                debug("DEBUG", ChatManager.self, "[\(message.role)]: \(message.content.prefix(50))\(message.content.count > 50 ? "..." : "")")
             }
             
-            // Send request to AI server
-            let response = try await networkManager?.sendTextPrompt(prompt: text, parameters: params)
+            // Send request to AI server with history
+            let response = try await networkManager?.sendChatWithHistory(
+                messages: historyMessages,
+                parameters: params
+            )
             
             // Add AI response to conversation
             if let response = response {
@@ -113,9 +175,15 @@ class ChatManager: ObservableObject {
             // Prepare parameters
             var params: [String: Any] = [String: Any]()
             
+            // Get current date and time
+            let dateTime = getCurrentDateTime()
+            
             // Add system prompt if available
-            if let desc = bot.desc, !desc.isEmpty {
-                params["system"] = desc
+            var systemPrompt = bot.desc ?? ""
+            if !systemPrompt.isEmpty {
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${DATE}", with: dateTime.date)
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${TIME}", with: dateTime.time)
+                params["system"] = systemPrompt
             }
             
             // Add caption (vision prompt) if available
