@@ -165,7 +165,7 @@ extension NetworkManager {
     // Send a message with history to the AI
     func sendChatWithHistory(messages: [MessageModel]) async throws -> String {
         // Start with basic request body
-        var body: [String: Any] = [
+        let body: [String: Any] = [
             "client_key": EnvironmentManager.ai.aiKey?.md5 ?? "",
             "messages": messages.map { $0.toDictionary() },
             "params": [String: Any]()
