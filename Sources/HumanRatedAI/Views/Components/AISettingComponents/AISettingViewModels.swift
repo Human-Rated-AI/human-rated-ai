@@ -173,15 +173,26 @@ class EditAISettingViewModel: BaseAISettingViewModel, AISettingViewModel {
     
     override func checkForChanges() {
         // Check if any properties have changed from the original bot
-        hasChanges = originalBot.name != aiSetting.name
-        || originalBot.desc != aiSetting.desc
-        || originalBot.isPublic != aiSetting.isPublic
-        || originalBot.isOpenSource != aiSetting.isOpenSource
-        || originalBot.caption != aiSetting.caption
-        || originalBot.prefix != aiSetting.prefix
-        || originalBot.suffix != aiSetting.suffix
-        || originalBot.welcome != aiSetting.welcome
-        || originalBot.imageURL != aiSetting.imageURL
-        || selectedImage != nil
+        let nameChanged = originalBot.name != aiSetting.name
+        let descChanged = originalBot.desc != aiSetting.desc
+        let isPublicChanged = originalBot.isPublic != aiSetting.isPublic
+        let isOpenSourceChanged = originalBot.isOpenSource != aiSetting.isOpenSource
+        let captionChanged = originalBot.caption != aiSetting.caption
+        let prefixChanged = originalBot.prefix != aiSetting.prefix
+        let suffixChanged = originalBot.suffix != aiSetting.suffix
+        let welcomeChanged = originalBot.welcome != aiSetting.welcome
+        
+        // Special handling for image URL since they can be complex objects
+        let imageURLChanged: Bool
+        if let originalURL = originalBot.imageURL?.absoluteString,
+           let currentURL = aiSetting.imageURL?.absoluteString {
+            imageURLChanged = originalURL != currentURL
+        } else {
+            imageURLChanged = (originalBot.imageURL == nil) != (aiSetting.imageURL == nil)
+        }
+        
+        hasChanges = nameChanged || descChanged || isPublicChanged || isOpenSourceChanged ||
+                    captionChanged || prefixChanged || suffixChanged || welcomeChanged ||
+                    imageURLChanged || selectedImage != nil
     }
 }

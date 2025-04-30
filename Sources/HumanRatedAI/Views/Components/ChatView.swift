@@ -101,12 +101,16 @@ struct ChatView: View {
                 })
             }
 #else
-            // On iOS, use navigationDestination for better navigation handling
-            .navigationDestination(isPresented: $showEditView) {
-                EditBotView(bot: bot, onBotUpdated: { updatedBot in
-                    self.bot = updatedBot
-                })
-            }
+            // On iOS, conditionally set the navigation destination
+            .background(
+                NavigationLink(isActive: $showEditView) {
+                    EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                        self.bot = updatedBot
+                    })
+                } label: {
+                    EmptyView()
+                }
+            )
 #endif
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("AI Chat")
@@ -117,11 +121,14 @@ struct ChatView: View {
                     if isUserBot {
                         HStack(spacing: 16) {
                             Button(action: {
+                                // Ensure we're not in the middle of another operation
+                                if !isDeleting && !showDeleteAlert && !showErrorAlert {
 #if os(Android)
-                                showEditSheet = true
+                                    showEditSheet = true
 #else
-                                showEditView = true
+                                    showEditView = true
 #endif
+                                }
                             }) {
                                 Image(systemName: "pencil")
                                     .foregroundColor(.blue)
