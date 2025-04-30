@@ -11,6 +11,23 @@
 
 import Foundation
 
+enum NetworkError: Error, LocalizedError {
+    case serverError(statusCode: Int, errorMessage: String)
+    case connectionError(String)
+    case decodingError(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .serverError(let statusCode, let errorMessage):
+            return "Server error (\(statusCode)): \(errorMessage)"
+        case .connectionError(let message):
+            return "Connection error: \(message)"
+        case .decodingError(let message):
+            return "Data decoding error: \(message)"
+        }
+    }
+}
+
 public class NetworkManager {
     private let urlRequest: URLRequest
     
@@ -24,11 +41,28 @@ extension NetworkManager {
     func getData(_ path: String? = nil, headers: [String: String]? = nil) async throws -> Data {
         var request = urlRequest(path, headers: headers)
         request.httpMethod = "GET"
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                debug("FAIL", Self.self, "Non-HTTP response received")
+                throw URLError(.badServerResponse)
+            }
+            
+            if !(200...299).contains(httpResponse.statusCode) {
+                let responseText = String(data: data, encoding: .utf8) ?? "No response text"
+                debug("FAIL", Self.self, "HTTP status code \(httpResponse.statusCode): \(responseText)")
+                throw NetworkError.serverError(statusCode: httpResponse.statusCode, errorMessage: responseText)
+            }
+            return data
+        } catch {
+            debug("FAIL", Self.self, "Network request failed: \(error.localizedDescription)")
+            if let networkError = error as? NetworkError {
+                throw networkError
+            } else {
+                throw NetworkError.connectionError(error.localizedDescription)
+            }
         }
-        return data
     }
     
     func urlRequest(_ path: String? = nil, headers: [String: String]? = nil) -> URLRequest {
@@ -54,8 +88,13 @@ extension NetworkManager {
     
     func decodeDeployments(from data: Data) throws -> [Deployment] {
         let decoder = JSONDecoder()
-        let decodedData = try decoder.decode(DeploymentsWrapper.self, from: data)
-        return decodedData.value
+        do {
+            let decodedData = try decoder.decode(DeploymentsWrapper.self, from: data)
+            return decodedData.value
+        } catch {
+            debug("FAIL", Self.self, "Failed to decode deployments: \(error.localizedDescription)")
+            throw NetworkError.decodingError("Failed to decode deployments: \(error.localizedDescription)")
+        }
     }
     
     func getDeployments() async throws -> [Deployment] {
@@ -73,8 +112,13 @@ extension NetworkManager {
     
     func decodeModels(from data: Data) throws -> [String] {
         let decoder = JSONDecoder()
-        let modelsResponse = try decoder.decode(ModelsResponse.self, from: data)
-        return modelsResponse.data.map { $0.id }
+        do {
+            let modelsResponse = try decoder.decode(ModelsResponse.self, from: data)
+            return modelsResponse.data.map { $0.id }
+        } catch {
+            debug("FAIL", Self.self, "Failed to decode models: \(error.localizedDescription)")
+            throw NetworkError.decodingError("Failed to decode AI models: \(error.localizedDescription)")
+        }
     }
     
     // Supporting HTTP POST request function
@@ -84,13 +128,32 @@ extension NetworkManager {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // Convert body to JSON data
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                debug("FAIL", Self.self, "Non-HTTP response received for POST request")
+                throw URLError(.badServerResponse)
+            }
+            
+            if !(200...299).contains(httpResponse.statusCode) {
+                let responseText = String(data: data, encoding: .utf8) ?? "No response text"
+                debug("FAIL", Self.self, "HTTP POST status code \(httpResponse.statusCode): \(responseText)")
+                throw NetworkError.serverError(statusCode: httpResponse.statusCode, errorMessage: responseText)
+            }
+            return data
+        } catch let error as NetworkError {
+            throw error
+        } catch let error as NSError {
+            if error.domain == NSURLErrorDomain {
+                debug("FAIL", Self.self, "Network connection error: \(error.localizedDescription)")
+                throw NetworkError.connectionError(error.localizedDescription)
+            } else {
+                debug("FAIL", Self.self, "Error in POST request: \(error.localizedDescription)")
+                throw error
+            }
         }
-        return data
     }
     
     // Send a text prompt to the AI
@@ -116,7 +179,8 @@ extension NetworkManager {
         
         // Convert data to string
         guard let responseString = String(data: data, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+            debug("FAIL", Self.self, "Failed to decode response data as UTF-8 string")
+            throw NetworkError.decodingError("Failed to decode server response")
         }
         
         return responseString
@@ -156,7 +220,8 @@ extension NetworkManager {
         
         // Convert data to string
         guard let responseString = String(data: data, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+            debug("FAIL", Self.self, "Failed to decode response data as UTF-8 string")
+            throw NetworkError.decodingError("Failed to decode server response")
         }
         
         return responseString
@@ -176,7 +241,8 @@ extension NetworkManager {
         
         // Convert data to string
         guard let responseString = String(data: data, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+            debug("FAIL", Self.self, "Failed to decode response data as UTF-8 string")
+            throw NetworkError.decodingError("Failed to decode server response")
         }
         
         return responseString
@@ -213,7 +279,8 @@ extension NetworkManager {
         
         // Convert data to string
         guard let responseString = String(data: data, encoding: .utf8) else {
-            throw URLError(.badServerResponse)
+            debug("FAIL", Self.self, "Failed to decode response data as UTF-8 string")
+            throw NetworkError.decodingError("Failed to decode server response")
         }
         
         return responseString
