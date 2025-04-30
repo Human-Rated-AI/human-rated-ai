@@ -86,13 +86,43 @@ struct AvatarView: View {
                     await MainActor.run {
                         self.isLoading = false
                         self.loadFailed = true
-                        debug("STORAGE", "Failed to download: \(error.localizedDescription)")
+                        debug("STORAGE", Self.self, "Failed to download: \(error.localizedDescription)")
                     }
                 }
             }
 #else
-            // For Android, use URL approach
-            loadImageFromURL(imageURL)
+            // For Android, use URL approach with explicit error handling
+            Task {
+                do {
+                    // Try to get from data cache first before network request
+                    if let cachedData = ImageCache.shared.getImageData(for: imageURL),
+                       let uiImage = UIImage(data: cachedData) {
+                        await MainActor.run {
+                            ImageMemoryCache.shared.setImage(uiImage, for: cacheKey)
+                            self.image = uiImage
+                            self.isLoading = false
+                        }
+                        return
+                    }
+                    
+                    let data = try await ImageCache.shared.loadImage(from: imageURL)
+                    if let uiImage = UIImage(data: data) {
+                        await MainActor.run {
+                            ImageMemoryCache.shared.setImage(uiImage, for: cacheKey)
+                            self.image = uiImage
+                            self.isLoading = false
+                        }
+                    } else {
+                        throw NSError(domain: "AvatarView", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to create image from data"])
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.isLoading = false
+                        self.loadFailed = true
+                        debug("ANDROID_STORAGE", AvatarView.self, "Failed to download: \(error.localizedDescription)")
+                    }
+                }
+            }
 #endif
         } else {
             // For regular URLs
@@ -140,7 +170,7 @@ struct AvatarView: View {
                 await MainActor.run {
                     self.isLoading = false
                     self.loadFailed = true
-                    debug("URL", "Failed to download: \(error.localizedDescription)")
+                    debug("URL", AvatarView.self, "Failed to download: \(error.localizedDescription)")
                 }
             }
         }

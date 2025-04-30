@@ -23,7 +23,20 @@ struct EditBotView: View {
     
     init(bot: AISetting, onBotUpdated: ((AISetting) -> Void)? = nil) {
         self.onBotUpdated = onBotUpdated
-        self._viewModel = StateObject(wrappedValue: EditAISettingViewModel(originalBot: bot))
+        // Create a defensive copy of the bot to prevent unexpected modifications
+        let botCopy = AISetting(
+            id: bot.id,
+            caption: bot.caption,
+            desc: bot.desc,
+            imageURL: bot.imageURL,
+            isOpenSource: bot.isOpenSource,
+            isPublic: bot.isPublic,
+            name: bot.name,
+            prefix: bot.prefix,
+            suffix: bot.suffix,
+            welcome: bot.welcome
+        )
+        self._viewModel = StateObject(wrappedValue: EditAISettingViewModel(originalBot: botCopy))
     }
     
     var body: some View {

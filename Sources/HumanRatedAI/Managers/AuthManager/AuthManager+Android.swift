@@ -149,6 +149,9 @@ extension AuthManager {
     }
     
     func signInWithApple(completion: (() -> Void)? = nil) {
+        // Log the attempt
+        debug("INFO", AuthManager.self, "Apple Sign In was attempted on Android")
+        
         // SKIP INSERT:
         // try {
         //     // Get the current activity using our helper method
@@ -159,20 +162,26 @@ extension AuthManager {
         //         builder.setTitle("Apple Sign In Not Available")
         //         builder.setMessage("Apple Sign In is not available on Android devices. Would you like to sign in with Google instead?")
         //         builder.setPositiveButton("Sign in with Google") { _, _ ->
-        //             signInWithGoogle(completion)
+        //             // Use coroutine to prevent UI freezing
+        //             android.os.Handler(android.os.Looper.getMainLooper()).post {
+        //                 signInWithGoogle(completion)
+        //             }
         //         }
         //         builder.setNegativeButton("Cancel") { _, _ ->
-        //             handleLoginError("Authentication cancelled")
+        //             // Use coroutine to prevent UI freezing
+        //             android.os.Handler(android.os.Looper.getMainLooper()).post {
+        //                 handleLoginError("Authentication cancelled")
+        //             }
         //         }
         //         builder.show()
         //     } else {
         //         // Try using the application context as a fallback
         //         android.util.Log.e("AuthManager", "Could not get a valid Activity for Apple dialog")
-        //         handleLoginError("Cannot display dialog: no active Activity found")
+        //         handleLoginError("Apple Sign In is not available. Please try Google Sign In instead.")
         //     }
         // } catch (e: Exception) {
         //     android.util.Log.e("AuthManager", "Failed to show Apple Sign-In dialog: ${e.message}")
-        //     handleLoginError("Failed to show authentication dialog: ${e.message}")
+        //     handleLoginError("Apple Sign In is not available. Please try Google Sign In instead.")
         // }
     }
     
