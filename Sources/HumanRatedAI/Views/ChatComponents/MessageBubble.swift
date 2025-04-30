@@ -17,6 +17,12 @@ struct MessageBubble: View {
     let botImageURL: URL?
     let maxWidth: CGFloat
     
+    // Calculate effective max width accounting for avatar space
+    private var effectiveMaxWidth: CGFloat {
+        // Account for avatar width (32) + spacing (8)
+        return max(maxWidth - 40, maxWidth * 0.7)
+    }
+    
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             if message.isUser {
@@ -32,7 +38,7 @@ struct MessageBubble: View {
                 .background(message.isUser ? Color.blue : (colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1)))
                 .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
                 .cornerRadius(16)
-                .frame(maxWidth: maxWidth, alignment: message.isUser ? .trailing : .leading)
+                .frame(maxWidth: effectiveMaxWidth, alignment: message.isUser ? .trailing : .leading)
             
             if message.isUser {
                 // User avatar (placeholder - this would use user's avatar in a real implementation)
