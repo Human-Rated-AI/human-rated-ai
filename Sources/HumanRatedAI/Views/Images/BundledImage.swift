@@ -26,14 +26,39 @@ struct BundledImage: View {
     var body: some View {
 #if os(Android)
         let path = "Module.xcassets/\(name).imageset/\(name)"
-        AsyncImage(url: Bundle.module.url(forResource: path, withExtension: ext)) { image in
-            image
+        let imageURL = Bundle.module.url(forResource: path, withExtension: ext)
+        
+        if let imageURL = imageURL {
+            AsyncImage(url: imageURL) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                case .failure(_):
+                    // Fallback for failed image load
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.gray)
+                @unknown default:
+                    ProgressView()
+                }
+            }
+            .frame(width: width, height: height)
+        } else {
+            // Fallback for missing image URL
+            Image(systemName: "photo")
                 .resizable()
                 .scaledToFit()
-        } placeholder: {
-            ProgressView()
+                .foregroundColor(.gray)
+                .frame(width: width, height: height)
+                .onAppear {
+                    debug("FAIL", BundledImage.self, "Failed to load bundled image: \(name)\(ext.isEmpty ? "" : "."+ext)")
+                }
         }
-        .frame(width: width, height: height)
 #else
         Image(name, bundle: .module)
             .resizable()
