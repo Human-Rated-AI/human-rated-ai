@@ -1,13 +1,23 @@
-    # Human-Rated AI
+# Human-Rated AI
 
 A cross-platform application built with [Skip](https://skip.tools) for rating and evaluating AI systems on both iOS and Android.
+
+## Try It Out
+
+You can test the iOS version of Human-Rated AI using TestFlight:
+
+[![Download on TestFlight](https://developer.apple.com/assets/elements/icons/testflight/testflight-64x64.png)](https://testflight.apple.com/join/AXwUrXMY)
+
+[Join the TestFlight Beta](https://testflight.apple.com/join/AXwUrXMY)
 
 ## Project Overview
 
 Human-Rated AI allows users to:
 
-- Browse and explore available AI bots and agents
+- Browse and explore available AI bots and models
+- Chat with AI bots using text or images
 - Create custom AI bots with personalized configurations
+- Rate AI bots based on user experience
 - Save favorite AI bots for quick access
 - Manage application settings and preferences
 
@@ -19,8 +29,10 @@ This project follows a modern SwiftUI architecture that is transpiled to Android
 
 - **UI Layer**: TabView-based navigation with four main sections (AI, Create, Favorites, Settings)
 - **Data Management**: Environment and Network managers for API communication
-- **Authentication**: Firebase-based authentication for secure access to user features
+- **Authentication**: Firebase-based authentication with Apple ID and Google
+- **Chat System**: Integration with AI models via a secure backend
 - **Cross-Platform Support**: Conditional compilation to handle platform differences
+- **Reactive State Management**: Using SwiftUI's state management translated to Kotlin
 
 ## Building
 
@@ -55,6 +67,33 @@ The app uses Firebase for authentication:
 4. Configure the Apple and Google sign-in methods in the Firebase console
 5. Add the proper URL schemes in your project configuration
 
+### Environment Configuration
+
+The app requires proper environment configuration for API access:
+
+1. Copy the `env.sample` file to a new file named `env` in the same directory: `Sources/HumanRatedAI/Resources/`
+2. Update the values in the `env` file with your API keys and configuration
+
+Example of the environment file format (from `env.sample`):
+
+```
+# AI Provider setting
+AI_PROVIDER="openai"                         # AI Provider (openai or llama)
+
+# Vision capability setting
+AI_VISION_ENABLED="true"                     # Enable vision capabilities
+
+# OpenAI settings
+AI_KEY=""                    # Pre-md5 AI API Key
+AI_MODEL=""                  # AI API Deployment Model
+AI_URL=""                    # AI API URL
+
+# OAuth Client ID for client type 3 (see google-services.json)
+OAUTH_CLIENT_ID=""           # OAuth Client ID
+```
+
+Make sure to set the appropriate `AI_URL`, `AI_KEY`, and other values for your configuration.
+
 ## Testing
 
 The module can be tested using:
@@ -72,10 +111,12 @@ To run the application:
 3. Open the project in Xcode and run the HumanRatedAIApp target
 4. A build script will automatically deploy to the Android emulator
 
-### Debugging
+## Debugging
 
 - iOS logs: Available in the Xcode console
 - Android logs: View in Android Studio's logcat tab
+- Common issues can be fixed by cleaning build folders and restarting Xcode/Android Studio
+- TestFlight builds may behave differently than debug builds - always test thoroughly on both platforms
 
 ## License
 
