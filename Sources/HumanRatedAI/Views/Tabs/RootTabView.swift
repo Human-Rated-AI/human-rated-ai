@@ -15,7 +15,7 @@ public struct RootTabView: View {
     public var body: some View {
         TabView(selection: $tab) {
             // AI Tab - accessible to all users
-            AITabView()
+            AITabView(showFavoritesOnly: false)
                 .tabItem { Label("AI", systemImage: "face.smiling") }
                 .tag(Tab.ai)
             
@@ -33,7 +33,7 @@ public struct RootTabView: View {
             // Favorites Tab - requires authentication
             Group {
                 if authManager.isAuthenticated {
-                    FavsTabView()
+                    AITabView(showFavoritesOnly: true)
                 } else {
                     NeedToAuthorize(showAuthSheet: $showAuthSheet, reason: "to view your favorites")
                 }

@@ -23,36 +23,45 @@ struct AITabView: View {
     @State private var showAuthSheet = false
     @State private var userBots: AISettings = []
     @State private var userFavorites: [String] = []
+    let showFavoritesOnly: Bool
+    
+    private var filteredPublicBots: AISettings {
+        showFavoritesOnly ? publicBots.filter { userFavorites.contains($0.id) } : publicBots
+    }
+    
+    private var filteredUserBots: AISettings {
+        showFavoritesOnly ? userBots.filter { userFavorites.contains($0.id) } : userBots
+    }
     
     var body: some View {
         GeometryReader { geometry in
             NavigationStack(path: $navigationPath) {
                 ZStack {
-                    if publicBots.isEmpty && userBots.isEmpty && isLoading {
+                    if filteredPublicBots.isEmpty && filteredUserBots.isEmpty && isLoading {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if errorMessage.notEmpty {
                         ErrorView("Error Loading AI bots", message: errorMessage, tryAgainAction: loadAIBots)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if publicBots.isEmpty && userBots.isEmpty {
+                    } else if filteredPublicBots.isEmpty && filteredUserBots.isEmpty {
                         VStack(spacing: 20) {
                             Image(systemName: "info.circle")
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
-                            Text("No AI bots found")
+                            Text(showFavoritesOnly ? "No favorites yet." : "No AI bots found")
                                 .font(.title2)
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
-                            Text("Check back later or create your own!")
+                            Text(showFavoritesOnly ? "Add some from the AI tab!" : "Check back later or create your own!")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         List {
-                            if userBots.isNotEmpty {
+                            if filteredUserBots.isNotEmpty {
                                 Section(header: Text("My Bots").font(.headline)) {
                                     AIBotListSection(showAuthSheet: $showAuthSheet,
-                                                     bots: userBots,
+                                                     bots: filteredUserBots,
                                                      geometry: geometry,
                                                      isUserBotSection: true,
                                                      navigateToChat: { bot, isUserBot in
@@ -65,10 +74,10 @@ struct AITabView: View {
                                 }
                             }
                             
-                            if publicBots.isNotEmpty {
+                            if filteredPublicBots.isNotEmpty {
                                 Section(header: Text("Public Bots").font(.headline)) {
                                     AIBotListSection(showAuthSheet: $showAuthSheet,
-                                                     bots: publicBots,
+                                                     bots: filteredPublicBots,
                                                      geometry: geometry,
                                                      isUserBotSection: false,
                                                      navigateToChat: { bot, isUserBot in
@@ -92,7 +101,7 @@ struct AITabView: View {
                 .navigationDestination(for: ChatDestination.self) { destination in
                     ChatView(bot: destination.bot, isUserBot: destination.isUserBot)
                 }
-                .navigationTitle("AI Bot List")
+                .navigationTitle(showFavoritesOnly ? "Favorite Bots" : "AI Bot List")
                 .onAppear {
                     loadAIBots()
                 }
@@ -125,15 +134,15 @@ private extension AITabView {
         errorMessage = ""
         Task {
             do {
+                var aiSettings: AISettings = []
                 // Get all public AI bots settings
                 let allPublicSettings = try await FirestoreManager.shared.getAllPublicAISettings()
                 // Get ratings
                 let allRatings = try? await FirestoreManager.shared.getAllRatings()
-                var userBotsResult: AISettings = []
                 // Get user bots and favorites if logged in
                 if let user = authManager.user {
                     // Get user's own bots
-                    userBotsResult = try await FirestoreManager.shared.getUserAISettings(userID: user.uid)
+                    aiSettings = try await FirestoreManager.shared.getUserAISettings(userID: user.uid)
                     // Get user favorites
                     let favorites = try await FirestoreManager.shared.getUserFavorites(userID: user.uid)
                     await MainActor.run {
@@ -143,9 +152,9 @@ private extension AITabView {
                 await MainActor.run {
                     publicBots = allPublicSettings.filter { bot in
                         // Don't show bots in public section that are already in user's section
-                        userBotsResult.contains(where: { $0.id == bot.id }).isFalse
+                        aiSettings.contains(where: { $0.id == bot.id }).isFalse
                     }
-                    userBots = userBotsResult
+                    userBots = aiSettings
                     ratings = allRatings ?? [:]
                     isLoading = false
                 }
