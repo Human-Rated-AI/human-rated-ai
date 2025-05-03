@@ -86,7 +86,7 @@ struct AvatarView: View {
                     await MainActor.run {
                         self.isLoading = false
                         self.loadFailed = true
-                        debug("STORAGE", Self.self, "Failed to download: \(error.localizedDescription)")
+                        debug("FAIL", Self.self, "Failed to download: \(error.localizedDescription)")
                     }
                 }
             }
@@ -119,7 +119,7 @@ struct AvatarView: View {
                     await MainActor.run {
                         self.isLoading = false
                         self.loadFailed = true
-                        debug("ANDROID_STORAGE", AvatarView.self, "Failed to download: \(error.localizedDescription)")
+                        debug("FAIL", AvatarView.self, "Failed to download: \(error.localizedDescription)")
                     }
                 }
             }
@@ -170,7 +170,7 @@ struct AvatarView: View {
                 await MainActor.run {
                     self.isLoading = false
                     self.loadFailed = true
-                    debug("URL", AvatarView.self, "Failed to download: \(error.localizedDescription)")
+                    debug("FAIL", AvatarView.self, "Failed to download: \(error.localizedDescription)")
                 }
             }
         }

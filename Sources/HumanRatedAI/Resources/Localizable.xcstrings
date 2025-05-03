@@ -123,6 +123,9 @@
     "Error Loading AI bots" : {
 
     },
+    "Error Loading Favorites" : {
+
+    },
     "Everyone can see and copy your bot settings" : {
 
     },
@@ -130,6 +133,9 @@
 
     },
     "Favorite AI Bots" : {
+
+    },
+    "Favorite Bots" : {
 
     },
     "Favs" : {

@@ -84,7 +84,7 @@ public class ImageCache: ObservableObject {
                 return data
 #endif
             } catch {
-                debug("DIRECT", Self.self, "Firebase direct fetch failed: \(error)")
+                debug("WARN", Self.self, "Firebase direct fetch failed: \(error)")
                 // Fall through to standard approach
             }
         }
@@ -191,7 +191,7 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
                                 return
                             }
                         } catch {
-                            debug("CACHE-BUSTING", "Failed with: \(error)")
+                            debug("WARN", "Failed with: \(error)")
                             // Continue to standard method if cache-busting fails
                         }
                     }
