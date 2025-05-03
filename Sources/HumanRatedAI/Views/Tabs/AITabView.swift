@@ -19,6 +19,7 @@ struct AITabView: View {
     @State private var isLoading = false
     @State private var publicBots: AISettings = []
     @State private var ratings: [String: Double] = [:]
+    @State private var showAuthSheet = false
     @State private var userBots: AISettings = []
     @State private var userFavorites: [String] = []
     
@@ -67,35 +68,25 @@ struct AITabView: View {
                     List {
                         if userBots.isNotEmpty {
                             Section(header: Text("My Bots").font(.headline)) {
-                                AIBotListSection(
-                                    bots: userBots,
-                                    isUserBotSection: true,
-                                    ratings: ratings,
-                                    onAddToFavorite: { bot in
-                                        addToFavorites(bot)
-                                    },
-                                    onRemoveFavorite: { bot in
-                                        removeFromFavorites(bot)
-                                    },
-                                    userFavorites: userFavorites
-                                )
+                                AIBotListSection(showAuthSheet: $showAuthSheet,
+                                                 bots: userBots,
+                                                 isUserBotSection: true,
+                                                 onAddToFavorite: { addToFavorites($0) },
+                                                 onRemoveFavorite: { removeFromFavorites($0) },
+                                                 ratings: ratings,
+                                                 userFavorites: userFavorites)
                             }
                         }
                         
                         if publicBots.isNotEmpty {
                             Section(header: Text("Public Bots").font(.headline)) {
-                                AIBotListSection(
-                                    bots: publicBots,
-                                    isUserBotSection: false,
-                                    ratings: ratings,
-                                    onAddToFavorite: { bot in
-                                        addToFavorites(bot)
-                                    },
-                                    onRemoveFavorite: { bot in
-                                        removeFromFavorites(bot)
-                                    },
-                                    userFavorites: userFavorites
-                                )
+                                AIBotListSection(showAuthSheet: $showAuthSheet,
+                                                 bots: publicBots,
+                                                 isUserBotSection: false,
+                                                 onAddToFavorite: { addToFavorites($0) },
+                                                 onRemoveFavorite: { removeFromFavorites($0) },
+                                                 ratings: ratings,
+                                                 userFavorites: userFavorites)
                             }
                         }
                     }
@@ -108,6 +99,9 @@ struct AITabView: View {
             .navigationTitle("AI Bot List")
             .onAppear {
                 loadAIBots()
+            }
+            .sheet(isPresented: $showAuthSheet) {
+                AuthView(showAuthSheet: $showAuthSheet)
             }
         }
     }
@@ -124,20 +118,6 @@ private extension AITabView {
                 }
             } catch {
                 debug("FAIL", AITabView.self, "Error adding to favorites: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func removeFromFavorites(_ bot: AISetting) {
-        guard let user = authManager.user else { return }
-        Task {
-            do {
-                try await FirestoreManager.shared.removeFromFavorites(documentID: bot.id, userID: user.uid)
-                await MainActor.run {
-                    userFavorites.removeAll { $0 == bot.id }
-                }
-            } catch {
-                debug("FAIL", AITabView.self, "Error removing from favorites: \(error.localizedDescription)")
             }
         }
     }
@@ -180,125 +160,148 @@ private extension AITabView {
             }
         }
     }
+    
+    func removeFromFavorites(_ bot: AISetting) {
+        guard let user = authManager.user else { return }
+        Task {
+            do {
+                try await FirestoreManager.shared.removeFromFavorites(documentID: bot.id, userID: user.uid)
+                await MainActor.run {
+                    userFavorites.removeAll { $0 == bot.id }
+                }
+            } catch {
+                debug("FAIL", AITabView.self, "Error removing from favorites: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 // Helper component to display the bot list in each section
 private struct AIBotListSection: View {
+    @Binding var showAuthSheet: Bool
+    @EnvironmentObject var authManager: AuthManager
     let bots: AISettings
     let isUserBotSection: Bool
+    let onAddToFavorite: ((AISetting) -> Void)?
+    let onRemoveFavorite: ((AISetting) -> Void)?
     let ratings: [String: Double]
-    var onAddToFavorite: ((AISetting) -> Void)?
-    var onRemoveFavorite: ((AISetting) -> Void)?
     var userFavorites: [String] = []
     
     var body: some View {
         ForEach(bots, id: \.id) { bot in
-            NavigationLink(destination: ChatView(bot: bot, isUserBot: isUserBotSection)) {
-                AIBotRow(
-                    bot: bot,
-                    rating: ratings[bot.id] ?? 0.0,
-                    isFavorite: userFavorites.contains(bot.id),
-                    onToggleFavorite: {
-                        if userFavorites.contains(bot.id) {
-                            onRemoveFavorite?(bot)
-                        } else {
-                            onAddToFavorite?(bot)
+            HStack(spacing: 0) {
+                // Main content that navigates
+                NavigationLink(destination: ChatView(bot: bot, isUserBot: isUserBotSection)) {
+                    // This VStack takes all available width except for the star button
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Top row with image and text
+                        HStack(spacing: 15) {
+                            // Bot image
+                            AvatarView(imageURL: bot.imageURL, width: 50, height: 50)
+                            
+                            // Bot details
+                            VStack(alignment: .leading, spacing: 5) {
+                                // Name and description
+                                Text(bot.name)
+                                    .font(.headline)
+                                Text(bot.desc ?? "No description available")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
                         }
-                    }
-                )
-            }
-        }
-    }
-}
-
-// Bot row component
-private struct AIBotRow: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let bot: AISetting
-    let rating: Double
-    let isFavorite: Bool
-    var onToggleFavorite: (() -> Void)?
-    
-    var body: some View {
-        HStack(spacing: 15) {
-            // Image or placeholder
-            AvatarView(imageURL: bot.imageURL, width: 50, height: 50)
-            
-            // Bot details
-            VStack(alignment: .leading, spacing: 5) {
-                // Name and description
-                Text(bot.name)
-                    .font(.headline)
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-                Text(bot.desc ?? "No description available")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                // Public and open source tags
-                HStack(spacing: 4) {
-                    if bot.isPublic {
-                        AIBotTag(color: .blue, text: "Public")
-                    } else {
-                        AIBotTag(color: .red, text: "Private")
-                    }
-                    if bot.isOpenSource {
-                        AIBotTag(color: .green, text: "Open")
-                    }
-                }
-                // Rating
-                HStack(spacing: 3) {
-                    ForEach(1...5, id: \.self) { star in
-                        let fullStars = Int(rating)
-                        let fraction = rating - Double(fullStars)
-                        if star <= fullStars {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.yellow)
-                        } else if Double(star - 1) < rating && rating < Double(star) && 0.49999 < fraction {
+                        
+                        // Bottom row with tags and rating
+                        HStack(spacing: 4) {
+                            // Tags
+                            if bot.isPublic {
+                                AIBotTag(color: .blue, text: "Public")
+                            } else {
+                                AIBotTag(color: .red, text: "Private")
+                            }
+                            if bot.isOpenSource {
+                                AIBotTag(color: .green, text: "Open")
+                            }
+                            
+                            Spacer()
+                            
+                            // Rating stars
+                            let rating = ratings[bot.id] ?? 0.0
+                            ForEach(1...5, id: \.self) { star in
+                                let fullStars = Int(rating)
+                                let fraction = rating - Double(fullStars)
+                                if star <= fullStars {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                        .font(.caption)
+                                } else if Double(star - 1) < rating && rating < Double(star) && 0.49999 < fraction {
 #if os(Android)
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.yellow)
-                                .font(.caption)
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                        .font(.caption2)
 #else
-                            Image(systemName: "star.leadinghalf.fill")
-                                .foregroundColor(.yellow)
+                                    Image(systemName: "star.leadinghalf.fill")
+                                        .foregroundColor(.yellow)
+                                        .font(.caption)
 #endif
-                        } else {
+                                } else {
 #if os(Android)
-                            Image(systemName: "star.fill")
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.gray)
+                                        .font(.caption2)
+#else
+                                    Image(systemName: "star")
+                                        .foregroundColor(.yellow)
+                                        .font(.caption)
+#endif
+                                }
+                            }
+                            Text(String(format: "%.1f", rating))
+                                .font(.caption)
                                 .foregroundColor(.gray)
-                                .font(.caption)
-#else
-                            Image(systemName: "star")
-                                .foregroundColor(.yellow)
-#endif
                         }
                     }
-                    Text(String(format: "%.1f", rating))
-                        .font(.caption)
-                        .foregroundColor(.gray)
                 }
-            }
-            
-            Spacer()
-            
-            // Favorite toggle button
-            if let toggleAction = onToggleFavorite {
-                Button(action: toggleAction) {
-#if os(Android)
-                    Image(systemName: "star.fill")
-                        .foregroundColor(isFavorite ? .yellow : .gray)
-                        .font(isFavorite ? .body : .caption)
-#else
-                    Image(systemName: isFavorite ? "star.fill" : "star")
-                        .foregroundColor(.yellow)
+#if !os(Android)
+                .buttonStyle(PlainButtonStyle())
 #endif
+                
+                // This is the most important part - adding a spacer to create
+                // separation between the NavigationLink and the favorite button
+                Spacer(minLength: 0)
+                
+                // Favorite button - completely separate from NavigationLink
+                HStack {
+                    Button {
+                        if authManager.isAuthenticated {
+                            if userFavorites.contains(bot.id) {
+                                onRemoveFavorite?(bot)
+                            } else {
+                                onAddToFavorite?(bot)
+                            }
+                        } else {
+                            showAuthSheet = true
+                        }
+                    } label: {
+#if os(Android)
+                        Image(systemName: "star.fill")
+                            .foregroundColor(userFavorites.contains(bot.id) ? .yellow : .gray)
+                            .font(userFavorites.contains(bot.id) ? .body : .caption)
+                            .frame(width: 44, height: 44)
+#else
+                        Image(systemName: userFavorites.contains(bot.id) ? "star.fill" : "star")
+                            .foregroundColor(.yellow)
+                            .frame(width: 44, height: 44)
+#endif
+                    }
                 }
+                .padding(.horizontal, 10)
             }
+            .padding(.vertical, 8)
         }
-        .padding(.vertical, 5)
     }
 }
 
-private struct AIBotTag: View {
+struct AIBotTag: View {
     let color: Color
     let text: String
     
