@@ -80,6 +80,24 @@ public extension AISetting {
     }
 }
 
+extension AISetting: Comparable {
+    public static func < (lhs: AISetting, rhs: AISetting) -> Bool {
+        guard lhs.isPublic == rhs.isPublic else { return lhs.isPublic }
+        guard lhs.isOpenSource == rhs.isOpenSource else { return lhs.isOpenSource }
+        let lhsName = lhs.name.trimmed
+        let rhsName = rhs.name.trimmed
+        guard lhsName.notEmpty else { return false }
+        guard rhsName.notEmpty else { return true }
+        guard lhsName == rhsName else { return lhsName < rhsName }
+        let lhsDesc = lhs.desc?.trimmed ?? ""
+        let rhsDesc = rhs.desc?.trimmed ?? ""
+        guard lhsDesc.notEmpty else { return false }
+        guard rhsDesc.notEmpty else { return true }
+        guard lhsDesc == rhsDesc else { return lhsDesc < rhsDesc }
+        return lhs.id < rhs.id
+    }
+}
+
 extension AISetting: Equatable {
     public static func == (lhs: AISetting, rhs: AISetting) -> Bool {
         lhs.id == rhs.id
