@@ -79,3 +79,11 @@ public extension AISetting {
         dictionary.forEach { update($0.key, with: $0.value) }
     }
 }
+
+extension AISetting: Equatable {
+    public static func == (lhs: AISetting, rhs: AISetting) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+extension AISetting: Hashable {}
