@@ -17,9 +17,9 @@ class ChatManager: ObservableObject {
     private let MAX_HISTORY_MESSAGES = 25
     
     // Published properties
-    @Published var messages: [Message] = []
-    @Published var isProcessing = false
     @Published var error: String?
+    @Published var isProcessing = false
+    @Published var messages: [Message] = []
     
     // Dependencies
     private let authManager = AuthManager.shared
@@ -228,7 +228,7 @@ class ChatManager: ObservableObject {
                 messages: historyMessages
             )
             
-            // Add the exchange to conversation 
+            // Add the exchange to conversation
             if let response = response {
                 await MainActor.run {
                     messages.append(Message(content: visionPrompt, isUser: true, timestamp: Date()))

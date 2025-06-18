@@ -158,16 +158,20 @@ struct EditBotView: View {
                 // Update the AI setting in Firestore only if there are changes
                 if viewModel.hasChanges {
                     let _ = try await FirestoreManager.shared.updateAISetting(botToUpdate, userID: user.uid)
-                }
-                
-                // Using MainActor to update UI state
-                await MainActor.run {
-                    viewModel.isUpdating = false
-                    // Call the callback with the updated bot
-                    if viewModel.hasChanges {
+                    
+                    // Using MainActor to update UI state
+                    await MainActor.run {
+                        viewModel.isUpdating = false
+                        // Always call the callback when we actually updated something
                         onBotUpdated?(botToUpdate)
+                        showSuccessAlert = true
                     }
-                    showSuccessAlert = true
+                } else {
+                    // No changes were made, just dismiss
+                    await MainActor.run {
+                        viewModel.isUpdating = false
+                        dismiss()
+                    }
                 }
             } catch {
                 await MainActor.run {

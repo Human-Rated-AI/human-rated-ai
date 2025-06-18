@@ -15,33 +15,33 @@ import SwiftUI
 struct AITabView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject var authManager: AuthManager
-    @State private var errorMessage = ""
-    @State private var isLoading = false
     @State private var navigationPath = NavigationPath()
-    @State private var publicBots: AISettings = []
-    @State private var ratings: [String: Double] = [:]
     @State private var showAuthSheet = false
-    @State private var userBots: AISettings = []
-    @State private var userFavorites: [String] = []
+    @StateObject private var botsManager: BotsManager
     let showFavoritesOnly: Bool
     
+    init(showFavoritesOnly: Bool, authManager: AuthManager) {
+        self._botsManager = StateObject(wrappedValue: BotsManager(authManager: authManager))
+        self.showFavoritesOnly = showFavoritesOnly
+    }
+    
     private var filteredPublicBots: AISettings {
-        showFavoritesOnly ? publicBots.filter { userFavorites.contains($0.id) } : publicBots
+        showFavoritesOnly ? botsManager.publicBots.filter { botsManager.userFavorites.contains($0.id) } : botsManager.publicBots
     }
     
     private var filteredUserBots: AISettings {
-        showFavoritesOnly ? userBots.filter { userFavorites.contains($0.id) } : userBots
+        showFavoritesOnly ? botsManager.userBots.filter { botsManager.userFavorites.contains($0.id) } : botsManager.userBots
     }
     
     var body: some View {
         GeometryReader { geometry in
             NavigationStack(path: $navigationPath) {
                 ZStack {
-                    if filteredPublicBots.isEmpty && filteredUserBots.isEmpty && isLoading {
+                    if filteredPublicBots.isEmpty && filteredUserBots.isEmpty && botsManager.isLoading {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if errorMessage.notEmpty {
-                        ErrorView("Error Loading AI bots", message: errorMessage, tryAgainAction: loadAIBots)
+                    } else if botsManager.errorMessage.notEmpty {
+                        ErrorView("Error Loading AI bots", message: botsManager.errorMessage, tryAgainAction: botsManager.loadBots)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if filteredPublicBots.isEmpty && filteredUserBots.isEmpty {
                         VStack(spacing: 20) {
@@ -67,10 +67,10 @@ struct AITabView: View {
                                                      navigateToChat: { bot, isUserBot in
                                         navigationPath.append(ChatDestination(bot: bot, isUserBot: isUserBot))
                                     },
-                                                     onAddToFavorite: { addToFavorites($0) },
-                                                     onRemoveFavorite: { removeFromFavorites($0) },
-                                                     ratings: ratings,
-                                                     userFavorites: userFavorites)
+                                                     onAddToFavorite: { botsManager.addToFavorites($0) },
+                                                     onRemoveFavorite: { botsManager.removeFromFavorites($0) },
+                                                     ratings: botsManager.ratings,
+                                                     userFavorites: botsManager.userFavorites)
                                 }
                             }
                             
@@ -83,10 +83,10 @@ struct AITabView: View {
                                                      navigateToChat: { bot, isUserBot in
                                         navigationPath.append(ChatDestination(bot: bot, isUserBot: isUserBot))
                                     },
-                                                     onAddToFavorite: { addToFavorites($0) },
-                                                     onRemoveFavorite: { removeFromFavorites($0) },
-                                                     ratings: ratings,
-                                                     userFavorites: userFavorites)
+                                                     onAddToFavorite: { botsManager.addToFavorites($0) },
+                                                     onRemoveFavorite: { botsManager.removeFromFavorites($0) },
+                                                     ratings: botsManager.ratings,
+                                                     userFavorites: botsManager.userFavorites)
                                 }
                             }
                         }
@@ -99,84 +99,15 @@ struct AITabView: View {
                     }
                 }
                 .navigationDestination(for: ChatDestination.self) { destination in
-                    ChatView(bot: destination.bot, isUserBot: destination.isUserBot)
+                    ChatView(bot: destination.bot, isUserBot: destination.isUserBot, botsManager: botsManager)
                 }
                 .navigationTitle(showFavoritesOnly ? "Favorite Bots" : "AI Bot List")
                 .onAppear {
-                    loadAIBots()
+                    botsManager.loadBots()
                 }
                 .sheet(isPresented: $showAuthSheet) {
                     AuthView(showAuthSheet: $showAuthSheet)
                 }
-            }
-        }
-    }
-}
-
-private extension AITabView {
-    func addToFavorites(_ bot: AISetting) {
-        guard let user = authManager.user else { return }
-        Task {
-            do {
-                try await FirestoreManager.shared.addToFavorites(documentID: bot.id, userID: user.uid)
-                await MainActor.run {
-                    userFavorites.append(bot.id)
-                }
-            } catch {
-                debug("FAIL", AITabView.self, "Error adding to favorites: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func loadAIBots() {
-        if isLoading { return }
-        isLoading = true
-        errorMessage = ""
-        Task {
-            do {
-                var aiSettings: AISettings = []
-                // Get all public AI bots settings
-                let allPublicSettings = try await FirestoreManager.shared.getAllPublicAISettings()
-                // Get ratings
-                let allRatings = try? await FirestoreManager.shared.getAllRatings()
-                // Get user bots and favorites if logged in
-                if let user = authManager.user {
-                    // Get user's own bots
-                    aiSettings = try await FirestoreManager.shared.getUserAISettings(userID: user.uid)
-                    // Get user favorites
-                    let favorites = try await FirestoreManager.shared.getUserFavorites(userID: user.uid)
-                    await MainActor.run {
-                        userFavorites = favorites.map { $0.id }
-                    }
-                }
-                await MainActor.run {
-                    publicBots = allPublicSettings.filter { bot in
-                        // Don't show bots in public section that are already in user's section
-                        aiSettings.contains(where: { $0.id == bot.id }).isFalse
-                    }
-                    userBots = aiSettings
-                    ratings = allRatings ?? [:]
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    isLoading = false
-                }
-            }
-        }
-    }
-    
-    func removeFromFavorites(_ bot: AISetting) {
-        guard let user = authManager.user else { return }
-        Task {
-            do {
-                try await FirestoreManager.shared.removeFromFavorites(documentID: bot.id, userID: user.uid)
-                await MainActor.run {
-                    userFavorites.removeAll { $0 == bot.id }
-                }
-            } catch {
-                debug("FAIL", AITabView.self, "Error removing from favorites: \(error.localizedDescription)")
             }
         }
     }
