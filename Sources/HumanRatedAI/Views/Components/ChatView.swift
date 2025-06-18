@@ -101,16 +101,12 @@ struct ChatView: View {
                 })
             }
 #else
-            // On iOS, conditionally set the navigation destination
-            .background(
-                NavigationLink(isActive: $showEditView) {
-                    EditBotView(bot: bot, onBotUpdated: { updatedBot in
-                        self.bot = updatedBot
-                    })
-                } label: {
-                    EmptyView()
-                }
-            )
+            // On iOS, use the modern navigation destination modifier
+            .navigationDestination(isPresented: $showEditView) {
+                EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                    self.bot = updatedBot
+                })
+            }
 #endif
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("AI Chat")
