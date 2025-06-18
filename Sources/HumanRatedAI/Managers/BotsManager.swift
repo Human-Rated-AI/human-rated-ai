@@ -82,13 +82,12 @@ class BotsManager: ObservableObject {
                     userBots = aiSettings
                     ratings = allRatings ?? [:]
                     isLoading = false
-                    print("✅ BotsManager: Successfully loaded \(publicBots.count) public bots, \(userBots.count) user bots, \(userFavorites.count) favorites")
                 }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isLoading = false
-                    print("⚠️ BotsManager: Error loading bots: \(error.localizedDescription)")
+                    debug("ERROR", BotsManager.self, "Error loading bots: \(error.localizedDescription)")
                 }
             }
         }
@@ -106,25 +105,20 @@ class BotsManager: ObservableObject {
             }
             
             if orphanedFavoriteIDs.isEmpty {
-                print("✅ BotsManager: No orphaned favorites found for user \(userID)")
                 return
             }
-            
-            print("🧹 BotsManager: Found \(orphanedFavoriteIDs.count) orphaned favorite(s) for user \(userID): \(orphanedFavoriteIDs)")
             
             // Remove each orphaned favorite
             for orphanedFavoriteID in orphanedFavoriteIDs {
                 do {
                     try await FirestoreManager.shared.removeFromFavorites(documentID: orphanedFavoriteID, userID: userID)
-                    print("✅ BotsManager: Removed orphaned favorite \(orphanedFavoriteID)")
                 } catch {
-                    print("⚠️ BotsManager: Failed to remove orphaned favorite \(orphanedFavoriteID): \(error.localizedDescription)")
+                    debug("WARN", BotsManager.self,
+                          "Failed to remove orphaned favorite \(orphanedFavoriteID): \(error.localizedDescription)")
                 }
             }
-            
-            print("🎉 BotsManager: Finished cleaning up orphaned favorites for user \(userID)")
         } catch {
-            print("⚠️ BotsManager: Error during favorite cleanup for user \(userID): \(error.localizedDescription)")
+            debug("FAIL", BotsManager.self, "Error favorite cleanup for user \(userID): \(error.localizedDescription)")
         }
     }
     

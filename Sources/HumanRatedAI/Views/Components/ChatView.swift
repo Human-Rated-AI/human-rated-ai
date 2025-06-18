@@ -184,7 +184,8 @@ private extension ChatView {
                     try await FirestoreManager.shared.removeFromFavorites(documentID: botID, userID: user.uid)
                 } catch {
                     // It's OK if the bot wasn't in favorites - just log and continue
-                    print("Bot wasn't in favorites or error removing from favorites: \(error.localizedDescription)")
+                    debug("WARN", ChatView.self,
+                          "Bot wasn't in favorites or error removing from favorites: \(error.localizedDescription)")
                 }
                 
                 // Handle image deletion

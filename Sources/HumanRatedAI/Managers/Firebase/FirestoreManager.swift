@@ -176,7 +176,8 @@ extension FirestoreManager {
                         return aiSettingFrom(document: doc, withID: id)
                     } catch {
                         // If we can't access the bot (permission error or deleted), skip it
-                        print("⚠️ FirestoreManager: Skipping inaccessible favorite bot \(id): \(error.localizedDescription)")
+                        debug("WARN", FirestoreManager.self,
+                              "Skipping inaccessible favorite bot \(id): \(error.localizedDescription)")
                         return nil
                     }
                 }
