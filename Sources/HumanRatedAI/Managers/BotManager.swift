@@ -20,7 +20,6 @@ class BotManager: ObservableObject {
     }
     
     func updateBot(_ newBot: AISetting) {
-        print("🔧 BotManager: Updating bot from '\(bot.name)' to '\(newBot.name)'")
         bot = newBot
     }
 }

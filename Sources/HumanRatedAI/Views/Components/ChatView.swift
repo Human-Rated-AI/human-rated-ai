@@ -103,7 +103,6 @@ struct ChatView: View {
 #if os(Android)
             .sheet(isPresented: $showEditSheet) {
                 EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
-                    print("📱 ChatView: Received updated bot with name: \(updatedBot.name)")
                     botManager.updateBot(updatedBot)
                 })
             }
@@ -111,7 +110,6 @@ struct ChatView: View {
             // On iOS, use the modern navigation destination modifier
             .navigationDestination(isPresented: $showEditView) {
                 EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
-                    print("📱 ChatView: Received updated bot with name: \(updatedBot.name)")
                     botManager.updateBot(updatedBot)
                 })
             }

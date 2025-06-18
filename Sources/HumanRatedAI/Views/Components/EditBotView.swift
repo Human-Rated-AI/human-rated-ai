@@ -163,7 +163,6 @@ struct EditBotView: View {
                     await MainActor.run {
                         viewModel.isUpdating = false
                         // Always call the callback when we actually updated something
-                        print("🔄 EditBotView: Calling onBotUpdated with bot name: \(botToUpdate.name)")
                         onBotUpdated?(botToUpdate)
                         showSuccessAlert = true
                     }
