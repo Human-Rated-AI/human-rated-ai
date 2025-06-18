@@ -61,7 +61,10 @@ class BotsManager: ObservableObject {
                     // Get user's own bots
                     aiSettings = try await FirestoreManager.shared.getUserAISettings(userID: user.uid)
                     
-                    // Get user favorites
+                    // Get user favorites and clean up orphaned ones
+                    await cleanupOrphanedFavorites(userID: user.uid, availableBotIDs: Set(allPublicSettings.map { $0.id } + aiSettings.map { $0.id }))
+                    
+                    // Get cleaned favorites
                     let favorites = try await FirestoreManager.shared.getUserFavorites(userID: user.uid)
                     await MainActor.run {
                         userFavorites = favorites.map { $0.id }
@@ -76,13 +79,49 @@ class BotsManager: ObservableObject {
                     userBots = aiSettings
                     ratings = allRatings ?? [:]
                     isLoading = false
+                    print("✅ BotsManager: Successfully loaded \(publicBots.count) public bots, \(userBots.count) user bots, \(userFavorites.count) favorites")
                 }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isLoading = false
+                    print("⚠️ BotsManager: Error loading bots: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+    
+    /// Cleans up orphaned favorites (favorites that point to deleted bots)
+    private func cleanupOrphanedFavorites(userID: String, availableBotIDs: Set<String>) async {
+        do {
+            // Get current favorites
+            let currentFavorites = try await FirestoreManager.shared.getUserFavorites(userID: userID)
+            
+            // Find orphaned favorites (favorites that reference non-existent bots)
+            let orphanedFavorites = currentFavorites.filter { favorite in
+                !availableBotIDs.contains(favorite.id)
+            }
+            
+            if orphanedFavorites.isEmpty {
+                print("✅ BotsManager: No orphaned favorites found for user \(userID)")
+                return
+            }
+            
+            print("🧹 BotsManager: Found \(orphanedFavorites.count) orphaned favorite(s) for user \(userID)")
+            
+            // Remove each orphaned favorite
+            for orphanedFavorite in orphanedFavorites {
+                do {
+                    try await FirestoreManager.shared.removeFromFavorites(documentID: orphanedFavorite.id, userID: userID)
+                    print("✅ BotsManager: Removed orphaned favorite \(orphanedFavorite.id)")
+                } catch {
+                    print("⚠️ BotsManager: Failed to remove orphaned favorite \(orphanedFavorite.id): \(error.localizedDescription)")
+                }
+            }
+            
+            print("🎉 BotsManager: Finished cleaning up orphaned favorites for user \(userID)")
+        } catch {
+            print("⚠️ BotsManager: Error during favorite cleanup for user \(userID): \(error.localizedDescription)")
         }
     }
     

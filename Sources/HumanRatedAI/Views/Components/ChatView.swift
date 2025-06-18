@@ -177,6 +177,16 @@ private extension ChatView {
         isDeleting = true
         Task {
             do {
+                let botID = botManager.bot.id
+                
+                // Remove from current user's favorites first (if it exists)
+                do {
+                    try await FirestoreManager.shared.removeFromFavorites(documentID: botID, userID: user.uid)
+                } catch {
+                    // It's OK if the bot wasn't in favorites - just log and continue
+                    print("Bot wasn't in favorites or error removing from favorites: \(error.localizedDescription)")
+                }
+                
                 // Handle image deletion
                 if let imageURL = botManager.bot.imageURL, StorageManager.shared.isUserUploadedImage(imageURL, userID: user.uid) {
                     // Check if the image is used by other bots before deleting
@@ -189,8 +199,17 @@ private extension ChatView {
                         try await StorageManager.shared.deleteFileFromURL(imageURL)
                     }
                 }
-                // Delete the bot
+                
+                // Delete the bot from Firestore
                 try await FirestoreManager.shared.deleteAISetting(documentID: botManager.bot.id, userID: user.uid)
+                
+                // Update the shared BotsManager to remove from collections
+                await MainActor.run {
+                    botsManager?.userBots.removeAll { $0.id == botID }
+                    botsManager?.publicBots.removeAll { $0.id == botID }
+                    botsManager?.userFavorites.removeAll { $0 == botID }
+                }
+                
                 await MainActor.run {
                     isDeleting = false
                     dismiss()
