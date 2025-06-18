@@ -61,8 +61,11 @@ class BotsManager: ObservableObject {
                     // Get user's own bots
                     aiSettings = try await FirestoreManager.shared.getUserAISettings(userID: user.uid)
                     
-                    // Get user favorites and clean up orphaned ones
-                    await cleanupOrphanedFavorites(userID: user.uid, availableBotIDs: Set(allPublicSettings.map { $0.id } + aiSettings.map { $0.id }))
+                    // Create set of all accessible bot IDs (public + user's own bots)
+                    let accessibleBotIDs = Set(allPublicSettings.map { $0.id } + aiSettings.map { $0.id })
+                    
+                    // Clean up orphaned favorites based on accessible bots
+                    await cleanupOrphanedFavorites(userID: user.uid, accessibleBotIDs: accessibleBotIDs)
                     
                     // Get cleaned favorites
                     let favorites = try await FirestoreManager.shared.getUserFavorites(userID: user.uid)
@@ -92,14 +95,14 @@ class BotsManager: ObservableObject {
     }
     
     /// Cleans up orphaned favorites (favorites that point to deleted bots)
-    private func cleanupOrphanedFavorites(userID: String, availableBotIDs: Set<String>) async {
+    private func cleanupOrphanedFavorites(userID: String, accessibleBotIDs: Set<String>) async {
         do {
             // Get current favorites
             let currentFavorites = try await FirestoreManager.shared.getUserFavorites(userID: userID)
             
             // Find orphaned favorites (favorites that reference non-existent bots)
             let orphanedFavorites = currentFavorites.filter { favorite in
-                !availableBotIDs.contains(favorite.id)
+                !accessibleBotIDs.contains(favorite.id)
             }
             
             if orphanedFavorites.isEmpty {

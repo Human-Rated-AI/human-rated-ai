@@ -168,18 +168,29 @@ extension FirestoreManager {
             var fetchTasks: [Task<AISetting?, Error>] = []
             for id in batch {
                 let task = Task<AISetting?, Error> {
-                    let docRef = FirestoreQueries.getAISetting(documentID: id)
-                    let doc = try await docRef.getDocument()
-                    guard doc.exists else { return nil }
-                    // Parse the document data into an AISetting
-                    return aiSettingFrom(document: doc, withID: id)
+                    do {
+                        let docRef = FirestoreQueries.getAISetting(documentID: id)
+                        let doc = try await docRef.getDocument()
+                        guard doc.exists else { return nil }
+                        // Parse the document data into an AISetting
+                        return aiSettingFrom(document: doc, withID: id)
+                    } catch {
+                        // If we can't access the bot (permission error or deleted), skip it
+                        print("⚠️ FirestoreManager: Skipping inaccessible favorite bot \(id): \(error.localizedDescription)")
+                        return nil
+                    }
                 }
                 fetchTasks.append(task)
             }
             // Wait for all fetches in this batch to complete
             for task in fetchTasks {
-                if let setting = try await task.value {
-                    favoriteSettings.append(setting)
+                do {
+                    if let setting = try await task.value {
+                        favoriteSettings.append(setting)
+                    }
+                } catch {
+                    // Task failed, but we already handled it inside the task
+                    continue
                 }
             }
         }
