@@ -82,3 +82,7 @@ env
 GoogleService-Info.plist
 google-services.json
 serviceAccount.json
+
+# Node.js Scripts
+node_modules
+package-lock.json

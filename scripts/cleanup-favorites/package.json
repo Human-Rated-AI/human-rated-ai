@@ -1,0 +1,36 @@
+{
+  "name": "firestore-favorites-cleanup",
+  "version": "1.0.0",
+  "description": "Cleanup orphaned favorites that reference deleted AI bots in Firestore",
+  "main": "cleanup-favorites.js",
+  "scripts": {
+    "cleanup": "node cleanup-favorites.js",
+    "cleanup-dry": "node cleanup-favorites.js --dry-run",
+    "cleanup-auto": "node cleanup-favorites.js --yes",
+    "install-deps": "npm install",
+    "help": "node cleanup-favorites.js --help"
+  },
+  "keywords": [
+    "firestore",
+    "cleanup",
+    "favorites",
+    "firebase",
+    "database-maintenance"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/firestore-favorites-cleanup.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/firestore-favorites-cleanup/issues"
+  },
+  "homepage": "https://github.com/yourusername/firestore-favorites-cleanup#readme"
+}
