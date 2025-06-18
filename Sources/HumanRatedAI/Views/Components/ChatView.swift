@@ -14,8 +14,6 @@ import SwiftUI
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
-    @StateObject private var botManager: BotManager
-    @StateObject private var chatManager = ChatManager()
     @State private var deleteError: String?
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
@@ -24,10 +22,14 @@ struct ChatView: View {
     @State private var showErrorAlert = false
     @State private var messageText: String = ""
     @State private var scrollProxy: ScrollViewProxy? = nil
+    @StateObject private var botManager: BotManager
+    @StateObject private var chatManager = ChatManager()
+    let botsManager: BotsManager?
     let isUserBot: Bool
     
-    init(bot: AISetting, isUserBot: Bool) {
+    init(bot: AISetting, isUserBot: Bool, botsManager: BotsManager? = nil) {
         self._botManager = StateObject(wrappedValue: BotManager(bot: bot))
+        self.botsManager = botsManager
         self.isUserBot = isUserBot
     }
     
@@ -104,6 +106,7 @@ struct ChatView: View {
             .sheet(isPresented: $showEditSheet) {
                 EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
                     botManager.updateBot(updatedBot)
+                    botsManager?.updateBot(updatedBot)
                 })
             }
 #else
@@ -111,6 +114,7 @@ struct ChatView: View {
             .navigationDestination(isPresented: $showEditView) {
                 EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
                     botManager.updateBot(updatedBot)
+                    botsManager?.updateBot(updatedBot)
                 })
             }
 #endif
