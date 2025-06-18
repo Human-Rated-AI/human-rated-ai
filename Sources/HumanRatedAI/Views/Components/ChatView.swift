@@ -14,8 +14,8 @@ import SwiftUI
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
+    @StateObject private var botManager: BotManager
     @StateObject private var chatManager = ChatManager()
-    @State var bot: AISetting
     @State private var deleteError: String?
     @State private var isDeleting = false
     @State private var showDeleteAlert = false
@@ -26,11 +26,17 @@ struct ChatView: View {
     @State private var scrollProxy: ScrollViewProxy? = nil
     let isUserBot: Bool
     
+    init(bot: AISetting, isUserBot: Bool) {
+        self._botManager = StateObject(wrappedValue: BotManager(bot: bot))
+        self.isUserBot = isUserBot
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 // Small model name at the top
-                ChatHeader(botName: bot.name)
+                ChatHeader(botName: botManager.bot.name)
+                    .id("header-\(botManager.bot.name)")  // Force header refresh
                 
                 // Chat area with messages
                 ScrollViewReader { proxy in
@@ -39,7 +45,7 @@ struct ChatView: View {
                             ForEach(chatManager.messages) { message in
                                 MessageBubble(
                                     message: message,
-                                    botImageURL: bot.imageURL,
+                                    botImageURL: botManager.bot.imageURL,
                                     maxWidth: geometry.size.width * 0.7
                                 )
                                 .id(message.id)
@@ -51,7 +57,7 @@ struct ChatView: View {
                         scrollProxy = proxy
                         // Add welcome message if messages array is empty
                         if chatManager.messages.isEmpty {
-                            let welcome = bot.welcome?.nonEmptyTrimmed ?? "Welcome to \(bot.name)!"
+                            let welcome = botManager.bot.welcome?.nonEmptyTrimmed ?? "Welcome to \(botManager.bot.name)!"
                             let welcomeMessage = Message(content: welcome, isUser: false, timestamp: Date())
                             chatManager.messages.append(welcomeMessage)
                             // Scroll to the welcome message
@@ -87,7 +93,7 @@ struct ChatView: View {
                     deleteBot()
                 }
             } message: {
-                Text("Are you sure you want to delete \(bot.name)? This action cannot be undone.")
+                Text("Are you sure you want to delete \(botManager.bot.name)? This action cannot be undone.")
             }
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK", role: .cancel) { }
@@ -96,24 +102,24 @@ struct ChatView: View {
             }
 #if os(Android)
             .sheet(isPresented: $showEditSheet) {
-                EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
                     print("📱 ChatView: Received updated bot with name: \(updatedBot.name)")
-                    self.bot = updatedBot
+                    botManager.updateBot(updatedBot)
                 })
             }
 #else
             // On iOS, use the modern navigation destination modifier
             .navigationDestination(isPresented: $showEditView) {
-                EditBotView(bot: bot, onBotUpdated: { updatedBot in
+                EditBotView(bot: botManager.bot, onBotUpdated: { updatedBot in
                     print("📱 ChatView: Received updated bot with name: \(updatedBot.name)")
-                    self.bot = updatedBot
+                    botManager.updateBot(updatedBot)
                 })
             }
 #endif
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("AI Chat")
             // Use the ID modifier to ensure navigation title updates when bot changes
-            .id("chatView-\(bot.id)-\(bot.name)")
+            .id("chatView-\(botManager.bot.id)-\(botManager.bot.name)")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isUserBot {
@@ -154,7 +160,7 @@ struct ChatView: View {
         // Send message to AI through ChatManager
         Task {
             do {
-                _ = try await chatManager.sendMessage(trimmedMessage, bot: bot)
+                _ = try await chatManager.sendMessage(trimmedMessage, bot: botManager.bot)
             } catch {
                 // Error will be handled by the ChatManager and displayed in the UI
                 showErrorAlert = chatManager.error != nil
@@ -170,11 +176,11 @@ private extension ChatView {
         Task {
             do {
                 // Handle image deletion
-                if let imageURL = bot.imageURL, StorageManager.shared.isUserUploadedImage(imageURL, userID: user.uid) {
+                if let imageURL = botManager.bot.imageURL, StorageManager.shared.isUserUploadedImage(imageURL, userID: user.uid) {
                     // Check if the image is used by other bots before deleting
                     let isImageUsedByOthers = try await FirestoreManager.shared.isImageUsedByOtherBots(
                         imageURL: imageURL,
-                        excludingBotID: bot.id
+                        excludingBotID: botManager.bot.id
                     )
                     // Delete the image if it's not used by other bots
                     if isImageUsedByOthers.isFalse {
@@ -182,7 +188,7 @@ private extension ChatView {
                     }
                 }
                 // Delete the bot
-                try await FirestoreManager.shared.deleteAISetting(documentID: bot.id, userID: user.uid)
+                try await FirestoreManager.shared.deleteAISetting(documentID: botManager.bot.id, userID: user.uid)
                 await MainActor.run {
                     isDeleting = false
                     dismiss()

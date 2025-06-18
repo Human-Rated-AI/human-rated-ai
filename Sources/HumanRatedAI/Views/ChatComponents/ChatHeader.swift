@@ -22,6 +22,12 @@ struct ChatHeader: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
+                .onAppear {
+                    print("🏠 ChatHeader: Displaying bot name: \(botName)")
+                }
+                .onChange(of: botName) { newName in
+                    print("🏠 ChatHeader: Bot name changed to: \(newName)")
+                }
             Spacer()
         }
         .background(colorScheme == .dark ? Color.black : Color.white)
