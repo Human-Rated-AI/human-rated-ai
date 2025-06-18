@@ -29,21 +29,15 @@ class BotsManager: ObservableObject {
     
     /// Updates a specific bot in the appropriate collection
     func updateBot(_ updatedBot: AISetting) {
-        print("🔧 BotsManager: Updating bot '\(updatedBot.name)' (ID: \(updatedBot.id))")
-        
         // Update in userBots if it exists there
         if let userIndex = userBots.firstIndex(where: { $0.id == updatedBot.id }) {
             userBots[userIndex] = updatedBot
-            print("✅ BotsManager: Updated bot in userBots at index \(userIndex)")
         }
         
         // Update in publicBots if it exists there
         if let publicIndex = publicBots.firstIndex(where: { $0.id == updatedBot.id }) {
             publicBots[publicIndex] = updatedBot
-            print("✅ BotsManager: Updated bot in publicBots at index \(publicIndex)")
         }
-        
-        print("🔧 BotsManager: Update complete for bot '\(updatedBot.name)'")
     }
     
     /// Loads all bots from Firestore
@@ -102,7 +96,7 @@ class BotsManager: ObservableObject {
                     userFavorites.append(bot.id)
                 }
             } catch {
-                print("Error adding to favorites: \(error.localizedDescription)")
+                debug("FAIL", BotsManager.self, "Error adding to favorites: \(error.localizedDescription)")
             }
         }
     }
@@ -117,7 +111,7 @@ class BotsManager: ObservableObject {
                     userFavorites.removeAll { $0 == bot.id }
                 }
             } catch {
-                print("Error removing from favorites: \(error.localizedDescription)")
+                debug("FAIL", BotsManager.self, "Error removing from favorites: \(error.localizedDescription)")
             }
         }
     }
