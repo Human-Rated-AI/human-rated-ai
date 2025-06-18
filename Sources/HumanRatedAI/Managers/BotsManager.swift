@@ -97,28 +97,28 @@ class BotsManager: ObservableObject {
     /// Cleans up orphaned favorites (favorites that point to deleted bots)
     private func cleanupOrphanedFavorites(userID: String, accessibleBotIDs: Set<String>) async {
         do {
-            // Get current favorites
-            let currentFavorites = try await FirestoreManager.shared.getUserFavorites(userID: userID)
+            // Get current favorites IDs directly from the favorites collection (raw data)
+            let favoritesSnapshot = try await FirestoreManager.shared.getRawUserFavoriteIDs(userID: userID)
             
-            // Find orphaned favorites (favorites that reference non-existent bots)
-            let orphanedFavorites = currentFavorites.filter { favorite in
-                !accessibleBotIDs.contains(favorite.id)
+            // Find orphaned favorites (favorites that reference non-accessible bots)
+            let orphanedFavoriteIDs = favoritesSnapshot.filter { favoriteID in
+                !accessibleBotIDs.contains(favoriteID)
             }
             
-            if orphanedFavorites.isEmpty {
+            if orphanedFavoriteIDs.isEmpty {
                 print("✅ BotsManager: No orphaned favorites found for user \(userID)")
                 return
             }
             
-            print("🧹 BotsManager: Found \(orphanedFavorites.count) orphaned favorite(s) for user \(userID)")
+            print("🧹 BotsManager: Found \(orphanedFavoriteIDs.count) orphaned favorite(s) for user \(userID): \(orphanedFavoriteIDs)")
             
             // Remove each orphaned favorite
-            for orphanedFavorite in orphanedFavorites {
+            for orphanedFavoriteID in orphanedFavoriteIDs {
                 do {
-                    try await FirestoreManager.shared.removeFromFavorites(documentID: orphanedFavorite.id, userID: userID)
-                    print("✅ BotsManager: Removed orphaned favorite \(orphanedFavorite.id)")
+                    try await FirestoreManager.shared.removeFromFavorites(documentID: orphanedFavoriteID, userID: userID)
+                    print("✅ BotsManager: Removed orphaned favorite \(orphanedFavoriteID)")
                 } catch {
-                    print("⚠️ BotsManager: Failed to remove orphaned favorite \(orphanedFavorite.id): \(error.localizedDescription)")
+                    print("⚠️ BotsManager: Failed to remove orphaned favorite \(orphanedFavoriteID): \(error.localizedDescription)")
                 }
             }
             

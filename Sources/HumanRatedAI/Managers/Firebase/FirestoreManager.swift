@@ -197,6 +197,16 @@ extension FirestoreManager {
         return favoriteSettings
     }
     
+    /// Get raw user favorite IDs (for cleanup purposes)
+    /// - Parameter userID: The user ID
+    /// - Returns: Array of favorite bot IDs (without trying to fetch the actual bots)
+    public func getRawUserFavoriteIDs(userID: String) async throws -> [String] {
+        let favoritesSnapshot = try await FirestoreQueries.userFavoritesCollection(userID: userID).getDocuments()
+        return favoritesSnapshot.documents.compactMap { document in
+            document.data()["settingID"] as? String
+        }
+    }
+    
     /// Remove an AI setting from user's favorites
     /// - Parameters:
     ///   - documentID: The Firestore document ID of the AI setting
