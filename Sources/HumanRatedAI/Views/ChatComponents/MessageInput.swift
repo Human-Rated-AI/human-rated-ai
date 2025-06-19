@@ -10,12 +10,18 @@
 //
 
 import SwiftUI
+import SkipKit
 
 struct MessageInput: View {
     @Binding var messageText: String
     @Environment(\.colorScheme) private var colorScheme
     let onSend: () -> Void
+    let onImageUpload: (() -> Void)?
     var isLoading: Bool = false
+    
+    // State for image picker
+    @State private var showImagePicker = false
+    @State private var selectedImageURL: URL?
     
     private var sendMessageIcon: String {
 #if os(Android)
@@ -27,6 +33,19 @@ struct MessageInput: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            // Image upload button
+            if !isLoading && onImageUpload != nil {
+                Button(action: {
+                    print("📷 Image upload button tapped")
+                    showImagePicker = true
+                }) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.gray)
+                        .padding(8)
+                }
+            }
+            
             TextField("Type a message...", text: $messageText)
                 .padding(10)
                 .background(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1))
@@ -53,5 +72,20 @@ struct MessageInput: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(colorScheme == .dark ? Color.black : Color.white)
+#if os(Android)
+        .withMediaPicker(type: .library, isPresented: $showImagePicker, selectedImageURL: $selectedImageURL)
+#else
+        .sheet(isPresented: $showImagePicker) {
+            ImagePicker(selectedImageURL: $selectedImageURL)
+        }
+#endif
+        .onChange(of: selectedImageURL) { imageURL in
+            if let imageURL = imageURL {
+                print("📸 Image selected: \(imageURL)")
+                onImageUpload?()
+                // Reset the selected image URL for next time
+                selectedImageURL = nil
+            }
+        }
     }
 }

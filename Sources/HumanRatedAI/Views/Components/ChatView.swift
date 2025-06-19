@@ -84,7 +84,12 @@ struct ChatView: View {
                 
                 Divider()
                 // Message input area
-                MessageInput(messageText: $messageText, onSend: sendMessage, isLoading: chatManager.isProcessing)
+                MessageInput(
+                    messageText: $messageText, 
+                    onSend: sendMessage, 
+                    onImageUpload: handleImageUpload,
+                    isLoading: chatManager.isProcessing
+                )
             }
             .onChange(of: chatManager.error) { newError in
                 showErrorAlert = newError != nil
@@ -168,6 +173,15 @@ struct ChatView: View {
                 showErrorAlert = chatManager.error != nil
             }
         }
+    }
+    
+    private func handleImageUpload() {
+        print("📷 ChatView: Image upload action triggered")
+        // TODO: Implement image upload functionality
+        // This will be implemented in the next steps:
+        // 1. Get selected image from MessageInput
+        // 2. Upload to Firebase Storage
+        // 3. Call AI vision API with image URL and bot caption
     }
 }
 
