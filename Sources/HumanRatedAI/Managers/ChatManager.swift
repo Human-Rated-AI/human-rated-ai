@@ -84,8 +84,9 @@ class ChatManager: ObservableObject {
                 
                 // Generate a unique path for public chat images
                 let timestamp = Int(Date().timeIntervalSince1970)
+                let uuid = UUID().uuidString
                 let randomComponent = UUID().uuidString.prefix(8)
-                let imagePath = "public/chat_images/\(timestamp)_\(randomComponent).jpg"
+                let imagePath = "public/chat_images/\(timestamp)_\(uuid)_\(randomComponent).jpg"
                 
                 // Upload the image to Firebase Storage
                 finalImageURL = try await StorageManager.shared.uploadImage(
