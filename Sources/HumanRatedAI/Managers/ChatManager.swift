@@ -71,12 +71,7 @@ class ChatManager: ObservableObject {
             let finalImageURL: URL
             if imageURL.scheme == "file" {
                 // Convert local file URL to UIImage and upload to Firebase
-                guard let user = authManager.user else {
-                    await MainActor.run {
-                        isProcessing = false
-                    }
-                    throw NSError(domain: "ChatManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
-                }
+                // Note: Allow anonymous users to upload chat images to public directory
                 
                 // Load image from local file
                 let imageData = try Data(contentsOf: imageURL)
@@ -87,12 +82,10 @@ class ChatManager: ObservableObject {
                     throw NSError(domain: "ChatManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not load image from file"])
                 }
                 
-                // Generate a unique path for the image
-                let imagePath = StorageManager.shared.generateUniqueFilePath(
-                    for: user.uid,
-                    fileType: "chat_images",
-                    fileExtension: "jpg"
-                )
+                // Generate a unique path for public chat images
+                let timestamp = Int(Date().timeIntervalSince1970)
+                let randomComponent = UUID().uuidString.prefix(8)
+                let imagePath = "public/chat_images/\(timestamp)_\(randomComponent).jpg"
                 
                 // Upload the image to Firebase Storage
                 finalImageURL = try await StorageManager.shared.uploadImage(
