@@ -67,6 +67,58 @@ class ChatManager: ObservableObject {
         }
         
         do {
+            // Handle image upload if it's a local file
+            let finalImageURL: URL
+            if imageURL.scheme == "file" {
+                // Convert local file URL to UIImage and upload to Firebase
+                guard let user = authManager.user else {
+                    await MainActor.run {
+                        isProcessing = false
+                    }
+                    throw NSError(domain: "ChatManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
+                }
+                
+                // Load image from local file
+                let imageData = try Data(contentsOf: imageURL)
+                guard let image = UIImage(data: imageData) else {
+                    await MainActor.run {
+                        isProcessing = false
+                    }
+                    throw NSError(domain: "ChatManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Could not load image from file"])
+                }
+                
+                // Generate a unique path for the image
+                let imagePath = StorageManager.shared.generateUniqueFilePath(
+                    for: user.uid,
+                    fileType: "chat_images",
+                    fileExtension: "jpg"
+                )
+                
+                // Upload the image to Firebase Storage
+                finalImageURL = try await StorageManager.shared.uploadImage(
+                    image,
+                    to: imagePath,
+                    compressionQuality: 0.8
+                )
+                
+                debug("INFO", ChatManager.self, "Uploaded image to: \(finalImageURL)")
+                
+                // Update the message in chat to use the Firebase URL
+                await MainActor.run {
+                    if let lastMessage = messages.last, lastMessage.id == userMessage.id {
+                        // Replace the last message with updated URL
+                        messages[messages.count - 1] = Message(
+                            content: lastMessage.content,
+                            isUser: lastMessage.isUser,
+                            timestamp: lastMessage.timestamp,
+                            imageURL: finalImageURL
+                        )
+                    }
+                }
+            } else {
+                // Image is already uploaded, use as-is
+                finalImageURL = imageURL
+            }
             // Get current date and time
             let dateTime = getCurrentDateTime()
             
@@ -119,7 +171,7 @@ class ChatManager: ObservableObject {
             
             // Send request to AI server with history and image
             let response = try await networkManager?.sendImageWithHistory(
-                imageURL: imageURL,
+                imageURL: finalImageURL,
                 prompt: visionPrompt,
                 messages: historyMessages
             )
