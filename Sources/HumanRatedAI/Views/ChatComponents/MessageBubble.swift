@@ -11,6 +11,170 @@
 
 import SwiftUI
 
+#if os(iOS)
+import WebKit
+
+struct WebView: UIViewRepresentable {
+    let url: URL
+    
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        let request = URLRequest(url: url)
+        webView.load(request)
+        return webView
+    }
+    
+    func updateUIView(_ uiView: WKWebView, context: Context) {
+        // No updates needed
+    }
+}
+#else
+// For Android/Skip - simple fallback
+struct WebView: View {
+    let url: URL
+    
+    var body: some View {
+        VStack {
+            Text("WebView not available on this platform")
+            Text(url.absoluteString)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+#endif
+
+// Custom image view that handles Firebase Storage URLs better
+struct FirebaseImageView: View {
+    let url: URL
+    let maxWidth: CGFloat
+    let maxHeight: CGFloat
+    
+    @State private var image: UIImage?
+    @State private var isLoading = true
+    @State private var error: Error?
+    @State private var retryCount = 0
+    @State private var showModal = false
+    
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .onTapGesture {
+                        showModal = true
+                    }
+            } else if isLoading {
+                VStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text("Loading image...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                VStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundColor(.orange)
+                    if retryCount < 3 {
+                        Button("Retry") {
+                            retryCount += 1
+                            loadImage()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    } else {
+                        Text("Failed to load image")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Button("View in Browser") {
+                        showModal = true
+                    }
+                    .font(.caption)
+                    .foregroundColor(.green)
+                }
+                .onTapGesture {
+                    showModal = true
+                }
+            }
+        }
+        .frame(maxWidth: maxWidth, maxHeight: maxHeight)
+        .onAppear {
+            loadImage()
+        }
+        .sheet(isPresented: $showModal) {
+            VStack {
+                Text("Testing image in WebView")
+                    .font(.headline)
+                    .padding()
+                
+                WebView(url: url)
+                
+                Spacer()
+                
+                Button("Done") {
+                    showModal = false
+                }
+                .padding()
+            }
+            .navigationTitle("Image Test")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    private func loadImage() {
+        isLoading = true
+        error = nil
+        
+        Task {
+            do {
+                debug("INFO", FirebaseImageView.self, "Loading image from: \(url)")
+                
+                // Use the same method as AvatarView for Firebase Storage URLs
+                if url.absoluteString.contains("firebasestorage.googleapis.com") {
+                    // Use Firebase SDK directly (same as AvatarView)
+                    let image = try await StorageManager.shared.downloadImageFromURL(url)
+                    
+                    await MainActor.run {
+                        self.image = image
+                        self.isLoading = false
+                        debug("INFO", FirebaseImageView.self, "Successfully loaded image via Firebase SDK")
+                    }
+                } else {
+                    // For non-Firebase URLs, use URLSession
+                    var request = URLRequest(url: url)
+                    request.timeoutInterval = 30.0
+                    request.cachePolicy = .reloadIgnoringLocalCacheData
+                    
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        debug("INFO", FirebaseImageView.self, "HTTP Response: \(httpResponse.statusCode)")
+                    }
+                    
+                    guard let uiImage = UIImage(data: data) else {
+                        throw NSError(domain: "ImageError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not create image from data"])
+                    }
+                    
+                    await MainActor.run {
+                        self.image = uiImage
+                        self.isLoading = false
+                        debug("INFO", FirebaseImageView.self, "Successfully loaded image via URLSession")
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.error = error
+                    self.isLoading = false
+                    debug("ERROR", FirebaseImageView.self, "Failed to load image (attempt \(retryCount + 1)): \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+}
+
 struct MessageBubble: View {
     @Environment(\.colorScheme) private var colorScheme
     let message: Message
@@ -36,16 +200,11 @@ struct MessageBubble: View {
             VStack(alignment: message.isUser ? .trailing : .leading, spacing: 8) {
                 // Display image if present
                 if let imageURL = message.imageURL {
-                    AsyncImage(url: imageURL) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 200)
-                    }
-                    .frame(maxWidth: effectiveMaxWidth, maxHeight: 300)
+                    FirebaseImageView(
+                        url: imageURL,
+                        maxWidth: effectiveMaxWidth,
+                        maxHeight: 300
+                    )
                     .cornerRadius(12)
                 }
                 

@@ -97,6 +97,25 @@ class ChatManager: ObservableObject {
                 
                 debug("INFO", ChatManager.self, "Uploaded image to: \(finalImageURL)")
                 
+                // Clean up the URL for better iOS compatibility (only remove port)
+                let cleanURLString = finalImageURL.absoluteString
+                    .replacingOccurrences(of: ":443", with: "") // Only remove explicit port
+                
+                let cleanURL = URL(string: cleanURLString) ?? finalImageURL
+                debug("INFO", ChatManager.self, "Cleaned URL for display: \(cleanURL)")
+                
+                // Test if the cleaned URL is accessible
+                Task {
+                    do {
+                        let (_, response) = try await URLSession.shared.data(from: cleanURL)
+                        if let httpResponse = response as? HTTPURLResponse {
+                            debug("INFO", ChatManager.self, "URL test successful: HTTP \(httpResponse.statusCode)")
+                        }
+                    } catch {
+                        debug("WARN", ChatManager.self, "URL test failed: \(error.localizedDescription)")
+                    }
+                }
+                
                 // Update the message in chat to use the Firebase URL
                 await MainActor.run {
                     if let lastMessage = messages.last, lastMessage.id == userMessage.id {
@@ -105,7 +124,7 @@ class ChatManager: ObservableObject {
                             content: lastMessage.content,
                             isUser: lastMessage.isUser,
                             timestamp: lastMessage.timestamp,
-                            imageURL: finalImageURL
+                            imageURL: cleanURL // Use cleaned URL for display
                         )
                     }
                 }

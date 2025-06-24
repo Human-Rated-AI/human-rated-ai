@@ -111,6 +111,9 @@
     "Description" : {
 
     },
+    "Done" : {
+
+    },
     "Edit AI Bot" : {
 
     },
@@ -124,6 +127,9 @@
 
     },
     "Everyone can use your bot" : {
+
+    },
+    "Failed to load image" : {
 
     },
     "Favorite Bots" : {
@@ -199,6 +205,9 @@
     "Image Caption Instructions" : {
 
     },
+    "Image Test" : {
+
+    },
     "Item %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -255,6 +264,9 @@
           }
         }
       }
+    },
+    "Loading image..." : {
+
     },
     "Log Out" : {
 
@@ -353,6 +365,9 @@
 
     },
     "Remove" : {
+
+    },
+    "Retry" : {
 
     },
     "Screen %lld" : {
@@ -458,6 +473,9 @@
     "Take Photo" : {
 
     },
+    "Testing image in WebView" : {
+
+    },
     "Try Again" : {
 
     },
@@ -468,6 +486,9 @@
 
     },
     "User" : {
+
+    },
+    "View in Browser" : {
 
     },
     "Welcome" : {
