@@ -42,7 +42,113 @@ class ChatManager: ObservableObject {
     }
     
     // Send a message to the AI service using conversation history
-    func sendMessage(_ text: String, bot: AISetting) async throws -> String {
+    func sendMessage(_ text: String, bot: AISetting, imageURL: URL? = nil) async throws -> String {
+        // If there's an image, handle as image message
+        if let imageURL = imageURL {
+            return try await sendMessageWithImage(text: text, imageURL: imageURL, bot: bot)
+        }
+        
+        // Otherwise handle as text-only message
+        return try await sendTextMessage(text, bot: bot)
+    }
+    
+    // Private method for messages with images
+    private func sendMessageWithImage(text: String, imageURL: URL, bot: AISetting) async throws -> String {
+        // Update state on main thread
+        await MainActor.run {
+            isProcessing = true
+            error = nil
+        }
+        
+        // Add user message with image to conversation
+        let userMessage = Message(content: text, isUser: true, timestamp: Date(), imageURL: imageURL)
+        await MainActor.run {
+            messages.append(userMessage)
+        }
+        
+        do {
+            // Get current date and time
+            let dateTime = getCurrentDateTime()
+            
+            // Add system prompt if available, with date and time
+            var systemPrompt = bot.desc ?? ""
+            if !systemPrompt.isEmpty {
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${DATE}", with: dateTime.date)
+                systemPrompt = systemPrompt.replacingOccurrences(of: "${TIME}", with: dateTime.time)
+            }
+            
+            // Prepare conversation history for the API
+            var historyMessages = [MessageModel]()
+            
+            // Add system message if available
+            if !systemPrompt.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: systemPrompt))
+            }
+            
+            // Add prefix if available
+            if let prefix = bot.prefix, !prefix.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: prefix))
+            }
+            
+            // Add conversation history (excluding the current message we just added)
+            let previousMessagesArray = Array(messages.dropLast())
+            let limitedMessages = previousMessagesArray.suffix(MAX_HISTORY_MESSAGES - 1)
+            
+            // Convert to API message models
+            limitedMessages.forEach { message in
+                historyMessages.append(MessageModel(
+                    role: message.isUser ? "user" : "assistant",
+                    content: message.content,
+                    timestamp: message.timestamp
+                ))
+            }
+            
+            // Add suffix if available
+            if let suffix = bot.suffix, !suffix.isEmpty {
+                historyMessages.append(MessageModel(role: "system", content: suffix))
+            }
+            
+            // Use vision prompt if available, otherwise use the text
+            let visionPrompt = text.isEmpty ? (bot.caption?.nonEmptyTrimmed ?? "Please describe what you see in this image") : text
+            
+            // Log history messages for debugging
+            debug("INFO", ChatManager.self, "Sending image with text and \(historyMessages.count) history messages to AI")
+            historyMessages.forEach { message in
+                debug("DEBUG", ChatManager.self, "[\(message.role)]: \(message.content.prefix(50))\(message.content.count > 50 ? "..." : "")")
+            }
+            
+            // Send request to AI server with history and image
+            let response = try await networkManager?.sendImageWithHistory(
+                imageURL: imageURL,
+                prompt: visionPrompt,
+                messages: historyMessages
+            )
+            
+            // Add AI response to conversation
+            if let response = response {
+                let assistantMessage = Message(content: response, isUser: false, timestamp: Date())
+                await MainActor.run {
+                    messages.append(assistantMessage)
+                    isProcessing = false
+                }
+                return response
+            } else {
+                await MainActor.run {
+                    isProcessing = false
+                }
+                throw NSError(domain: "ChatManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "No response received"])
+            }
+        } catch {
+            await MainActor.run {
+                self.error = error.localizedDescription
+                isProcessing = false
+            }
+            throw error
+        }
+    }
+    
+    // Private method for text-only messages
+    private func sendTextMessage(_ text: String, bot: AISetting) async throws -> String {
         // Update state on main thread
         await MainActor.run {
             isProcessing = true

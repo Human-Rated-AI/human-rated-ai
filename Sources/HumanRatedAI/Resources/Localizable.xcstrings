@@ -352,6 +352,9 @@
     "Public Bots" : {
 
     },
+    "Remove" : {
+
+    },
     "Screen %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -380,6 +383,9 @@
           }
         }
       }
+    },
+    "Selected Image:" : {
+
     },
     "Settings" : {
       "localizations" : {

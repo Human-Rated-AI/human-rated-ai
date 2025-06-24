@@ -16,7 +16,8 @@ struct MessageInput: View {
     @Binding var messageText: String
     @Environment(\.colorScheme) private var colorScheme
     let onSend: () -> Void
-    let onImageUpload: (() -> Void)?
+    let onImageSelected: ((URL) -> Void)? // Change from onImageUpload to onImageSelected
+    let hasPendingImage: Bool // Add this to know if there's a pending image
     var isLoading: Bool = false
     
     // State for image picker
@@ -34,7 +35,7 @@ struct MessageInput: View {
     var body: some View {
         HStack(spacing: 12) {
             // Image upload button
-            if !isLoading && onImageUpload != nil {
+            if !isLoading && onImageSelected != nil {
                 Button(action: {
                     print("📷 Image upload button tapped")
                     showImagePicker = true
@@ -60,7 +61,7 @@ struct MessageInput: View {
                 .background(colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1))
                 .cornerRadius(20)
                 .onSubmit {
-                    if !isLoading && !messageText.isEmptyTrimmed {
+                    if !isLoading && (!messageText.isEmptyTrimmed || hasPendingImage) {
                         onSend()
                     }
                 }
@@ -82,7 +83,7 @@ struct MessageInput: View {
                         .foregroundColor(.blue)
 #endif
                 }
-                .disabled(messageText.isEmptyTrimmed)
+                .disabled(messageText.isEmptyTrimmed && !hasPendingImage)
             }
         }
         .padding(.horizontal)
@@ -98,7 +99,7 @@ struct MessageInput: View {
         .onChange(of: selectedImageURL) { imageURL in
             if let imageURL {
                 print("📸 Image selected: \(imageURL)")
-                onImageUpload?()
+                onImageSelected?(imageURL) // Pass the URL to parent
                 // Reset the selected image URL for next time
                 selectedImageURL = nil
             }

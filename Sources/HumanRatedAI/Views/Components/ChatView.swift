@@ -21,6 +21,7 @@ struct ChatView: View {
     @State private var showEditView = false
     @State private var showErrorAlert = false
     @State private var messageText: String = ""
+    @State private var pendingImageURL: URL? = nil // Add pending image state
     @State private var scrollProxy: ScrollViewProxy? = nil
     @StateObject private var botManager: BotManager
     @StateObject private var chatManager = ChatManager()
@@ -83,11 +84,50 @@ struct ChatView: View {
                 }
                 
                 Divider()
+                
+                // Image preview area
+                if let pendingImageURL = pendingImageURL {
+                    VStack {
+                        HStack {
+                            Text("Selected Image:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Button("Remove") {
+                                self.pendingImageURL = nil
+                            }
+                            .font(.caption)
+                            .foregroundColor(.red)
+                        }
+                        .padding(.horizontal)
+                        
+                        AsyncImage(url: pendingImageURL) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } placeholder: {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: 100)
+                        }
+                        .frame(maxHeight: 150)
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                        .onTapGesture {
+                            // Allow user to change image by tapping on it
+                            handleImageUpload()
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.05))
+                }
+                
                 // Message input area
                 MessageInput(
                     messageText: $messageText, 
                     onSend: sendMessage, 
-                    onImageUpload: handleImageUpload,
+                    onImageSelected: handleImageSelected,
+                    hasPendingImage: pendingImageURL != nil,
                     isLoading: chatManager.isProcessing
                 )
             }
@@ -159,15 +199,26 @@ struct ChatView: View {
     }
     
     private func sendMessage() {
-        guard let trimmedMessage = messageText.nonEmptyTrimmed, !chatManager.isProcessing else { return }
+        guard !chatManager.isProcessing else { return }
         
-        // Clear input field
+        // Create message with text and/or image
+        let hasText = !messageText.isEmptyTrimmed
+        let hasImage = pendingImageURL != nil
+        
+        // Don't send if there's neither text nor image
+        guard hasText || hasImage else { return }
+        
+        let messageContent = messageText.nonEmptyTrimmed ?? ""
+        let imageURL = pendingImageURL
+        
+        // Clear input fields
         messageText = ""
+        pendingImageURL = nil
         
         // Send message to AI through ChatManager
         Task {
             do {
-                _ = try await chatManager.sendMessage(trimmedMessage, bot: botManager.bot)
+                _ = try await chatManager.sendMessage(messageContent, bot: botManager.bot, imageURL: imageURL)
             } catch {
                 // Error will be handled by the ChatManager and displayed in the UI
                 showErrorAlert = chatManager.error != nil
@@ -175,13 +226,15 @@ struct ChatView: View {
         }
     }
     
+    private func handleImageSelected(_ imageURL: URL) {
+        print("📷 ChatView: Image selected: \(imageURL)")
+        pendingImageURL = imageURL
+    }
+    
     private func handleImageUpload() {
         print("📷 ChatView: Image upload action triggered")
-        // TODO: Implement image upload functionality
-        // This will be implemented in the next steps:
-        // 1. Get selected image from MessageInput
-        // 2. Upload to Firebase Storage
-        // 3. Call AI vision API with image URL and bot caption
+        // This function can be used to trigger image picker directly if needed
+        // For now, image selection is handled through MessageInput
     }
 }
 

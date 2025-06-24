@@ -16,6 +16,23 @@ struct Message: Identifiable {
     let content: String
     let isUser: Bool
     let timestamp: Date
+    let imageURL: URL? // Add support for images
+    
+    // Convenience initializer for text-only messages
+    init(content: String, isUser: Bool, timestamp: Date) {
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.imageURL = nil
+    }
+    
+    // Full initializer with image support
+    init(content: String, isUser: Bool, timestamp: Date, imageURL: URL?) {
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.imageURL = imageURL
+    }
 }
 
 extension Message: Equatable {

@@ -33,12 +33,32 @@ struct MessageBubble: View {
             }
             
             // Message bubble
-            Text(message.content)
-                .padding(12)
-                .background(message.isUser ? Color.blue : (colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1)))
-                .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
-                .cornerRadius(16)
-                .frame(maxWidth: effectiveMaxWidth, alignment: message.isUser ? .trailing : .leading)
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 8) {
+                // Display image if present
+                if let imageURL = message.imageURL {
+                    AsyncImage(url: imageURL) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } placeholder: {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 200)
+                    }
+                    .frame(maxWidth: effectiveMaxWidth, maxHeight: 300)
+                    .cornerRadius(12)
+                }
+                
+                // Display text if present
+                if !message.content.isEmpty {
+                    Text(message.content)
+                        .padding(12)
+                        .background(message.isUser ? Color.blue : (colorScheme == .dark ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1)))
+                        .foregroundColor(message.isUser ? .white : (colorScheme == .dark ? .white : .black))
+                        .cornerRadius(16)
+                }
+            }
+            .frame(maxWidth: effectiveMaxWidth, alignment: message.isUser ? .trailing : .leading)
             
             if message.isUser {
                 // User avatar (placeholder - this would use user's avatar in a real implementation)
