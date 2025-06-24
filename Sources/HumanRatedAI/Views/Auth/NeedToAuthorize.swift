@@ -13,12 +13,12 @@ import SwiftUI
 
 struct NeedToAuthorize: View {
     @Binding var showAuthSheet: Bool
-    var reason: String
-    
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    var reason: String
+    private let lockIcon = "lock.fill"
     
-    var isLandscape: Bool {
+    private var isLandscape: Bool {
         horizontalSizeClass == .regular && verticalSizeClass == .compact
     }
     
@@ -27,7 +27,7 @@ struct NeedToAuthorize: View {
             if isLandscape {
                 // Horizontal layout
                 HStack(spacing: 30) {
-                    Image(systemName: "lock.fill")
+                    Image(systemName: lockIcon)
                         .font(.system(size: 60))
                         .foregroundColor(.gray)
                         .padding()
@@ -57,7 +57,7 @@ struct NeedToAuthorize: View {
             } else {
                 // Vertical layout
                 VStack(spacing: 20) {
-                    Image(systemName: "lock.fill")
+                    Image(systemName: lockIcon)
                         .font(.system(size: 60))
                         .foregroundColor(.gray)
                         .padding()

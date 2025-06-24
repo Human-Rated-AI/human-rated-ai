@@ -13,9 +13,10 @@ import SwiftUI
 
 struct ErrorView: View {
     @Environment(\.colorScheme) private var colorScheme
-    let errorMessage: String
-    let errorTitle: String
-    let tryAgainAction: (() -> Void)?
+    private let errorMessage: String
+    private let errorTitle: String
+    private let tryAgainAction: (() -> Void)?
+    private let warningIcon = "exclamationmark.triangle"
     
     init(_ title: String, message: String, tryAgainAction: (() -> Void)? = nil) {
         self.errorTitle = title
@@ -25,7 +26,7 @@ struct ErrorView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle")
+            Image(systemName: warningIcon)
                 .font(.system(size: 60))
                 .foregroundColor(.orange)
             Text(errorTitle)

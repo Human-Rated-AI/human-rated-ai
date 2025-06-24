@@ -18,7 +18,9 @@ struct AITabView: View {
     @State private var navigationPath = NavigationPath()
     @State private var showAuthSheet = false
     @StateObject private var botsManager: BotsManager
-    let showFavoritesOnly: Bool
+    private let chevronRightIcon = "chevron.right"
+    private let infoIcon = "info.circle"
+    private let showFavoritesOnly: Bool
     
     init(showFavoritesOnly: Bool, authManager: AuthManager) {
         self._botsManager = StateObject(wrappedValue: BotsManager(authManager: authManager))
@@ -45,7 +47,7 @@ struct AITabView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if filteredPublicBots.isEmpty && filteredUserBots.isEmpty {
                         VStack(spacing: 20) {
-                            Image(systemName: "info.circle")
+                            Image(systemName: infoIcon)
                                 .font(.system(size: 60))
                                 .foregroundColor(.gray)
                             Text(showFavoritesOnly ? "No favorites yet." : "No AI bots found")
@@ -70,7 +72,8 @@ struct AITabView: View {
                                                      onAddToFavorite: { botsManager.addToFavorites($0) },
                                                      onRemoveFavorite: { botsManager.removeFromFavorites($0) },
                                                      ratings: botsManager.ratings,
-                                                     userFavorites: botsManager.userFavorites)
+                                                     userFavorites: botsManager.userFavorites,
+                                                     chevronIcon: chevronRightIcon)
                                 }
                             }
                             
@@ -86,7 +89,8 @@ struct AITabView: View {
                                                      onAddToFavorite: { botsManager.addToFavorites($0) },
                                                      onRemoveFavorite: { botsManager.removeFromFavorites($0) },
                                                      ratings: botsManager.ratings,
-                                                     userFavorites: botsManager.userFavorites)
+                                                     userFavorites: botsManager.userFavorites,
+                                                     chevronIcon: chevronRightIcon)
                                 }
                             }
                         }
@@ -124,6 +128,7 @@ private struct AIBotListSection: View {
     let onRemoveFavorite: ((AISetting) -> Void)?
     let ratings: [String: Double]
     let userFavorites: [String]
+    let chevronIcon: String
     
     var body: some View {
         ForEach(bots.sorted(), id: \.id) { bot in
@@ -132,7 +137,7 @@ private struct AIBotListSection: View {
                 Button(action: {
                     navigateToChat(bot, isUserBotSection)
                 }) {
-                    AIBotListItem(bot: bot, geometry: geometry, ratings: ratings)
+                    AIBotListItem(bot: bot, geometry: geometry, ratings: ratings, chevronIcon: chevronIcon)
                 }
                 .buttonStyle(.plain)
                 
@@ -153,6 +158,7 @@ private struct AIBotListItem: View {
     let bot: AISetting
     let geometry: GeometryProxy
     let ratings: [String: Double]
+    let chevronIcon: String
     
     var body: some View {
         // Top row with image and text
@@ -175,7 +181,7 @@ private struct AIBotListItem: View {
             Spacer()
             
             // Disclosure indicator
-            Image(systemName: "chevron.right")
+            Image(systemName: chevronIcon)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.gray)
         }

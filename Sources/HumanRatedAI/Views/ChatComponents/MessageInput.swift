@@ -39,10 +39,19 @@ struct MessageInput: View {
                     print("📷 Image upload button tapped")
                     showImagePicker = true
                 }) {
+#if os(Android)
+                    Image("camera")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.gray)
+                        .padding(8)
+#else
                     Image(systemName: "camera.fill")
                         .font(.system(size: 20))
                         .foregroundColor(.gray)
                         .padding(8)
+#endif
                 }
             }
             
@@ -80,7 +89,7 @@ struct MessageInput: View {
         }
 #endif
         .onChange(of: selectedImageURL) { imageURL in
-            if let imageURL = imageURL {
+            if let imageURL {
                 print("📸 Image selected: \(imageURL)")
                 onImageUpload?()
                 // Reset the selected image URL for next time
