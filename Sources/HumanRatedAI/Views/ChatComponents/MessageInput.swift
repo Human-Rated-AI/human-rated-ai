@@ -25,9 +25,9 @@ struct MessageInput: View {
     
     private var sendMessageIcon: String {
 #if os(Android)
-        "chevron.up"
+        "paperplane"
 #else
-        "arrow.up.circle.fill"
+        "paperplane.fill"
 #endif
     }
     
@@ -71,9 +71,16 @@ struct MessageInput: View {
                     .padding(8)
             } else {
                 Button(action: onSend) {
+#if os(Android)
                     Image(systemName: sendMessageIcon)
-                        .font(.system(size: 30))
+                        .font(.system(size: 16))
                         .foregroundColor(.blue)
+                        .rotationEffect(.degrees(-45))
+#else
+                    Image(systemName: sendMessageIcon)
+                        .font(.system(size: 20))
+                        .foregroundColor(.blue)
+#endif
                 }
                 .disabled(messageText.isEmptyTrimmed)
             }
