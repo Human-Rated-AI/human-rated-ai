@@ -13,6 +13,7 @@ import SwiftUI
 
 // Custom image view that handles Firebase Storage URLs better
 struct FirebaseImageView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let url: URL
     let maxWidth: CGFloat
     let maxHeight: CGFloat
@@ -22,6 +23,7 @@ struct FirebaseImageView: View {
     @State private var error: Error?
     @State private var retryCount = 0
     @State private var showModal = false
+    @State private var extractedTimeString = "Image Preview"
     
     // Extract upload time from Firebase URL
     private var imageUploadTimeString: String {
@@ -98,20 +100,16 @@ struct FirebaseImageView: View {
         }
         .frame(maxWidth: maxWidth, maxHeight: maxHeight)
         .onAppear {
+            extractedTimeString = imageUploadTimeString
             loadImage()
         }
         .sheet(isPresented: $showModal) {
             VStack(spacing: 16) {
-                // Title - only show if we have a timestamp
-                if !imageUploadTimeString.isEmpty && imageUploadTimeString != "Image Preview" {
-                    Text(imageUploadTimeString)
-                        .font(.headline)
-                        .padding(.top)
-                } else {
-                    Text("Image Preview")
-                        .font(.headline)
-                        .padding(.top)
-                }
+                // Title - use the extracted timestamp with proper color scheme support
+                Text(extractedTimeString)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.top)
                 
                 // Image display
                 if let image = image {
@@ -145,7 +143,7 @@ struct FirebaseImageView: View {
                 .padding(.bottom)
             }
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(colorScheme == .dark ? Color.black : Color.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -264,7 +262,7 @@ struct MessageBubble: View {
                     FirebaseImageView(
                         url: imageURL,
                         maxWidth: effectiveMaxWidth,
-                        maxHeight: 300
+                        maxHeight: 300.0
                     )
                     .cornerRadius(12)
                 }
