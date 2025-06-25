@@ -19,6 +19,10 @@ struct WebView: UIViewRepresentable {
     
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
+        
+        // Add some debugging for WebView
+        webView.navigationDelegate = context.coordinator
+        
         let request = URLRequest(url: url)
         webView.load(request)
         return webView
@@ -26,6 +30,20 @@ struct WebView: UIViewRepresentable {
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
         // No updates needed
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    class Coordinator: NSObject, WKNavigationDelegate {
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            debug("ERROR", WebView.self, "WebView failed to load: \(error.localizedDescription)")
+        }
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            debug("INFO", WebView.self, "WebView finished loading")
+        }
     }
 }
 #else
@@ -55,6 +73,32 @@ struct FirebaseImageView: View {
     @State private var error: Error?
     @State private var retryCount = 0
     @State private var showModal = false
+    
+    // Extract upload time from Firebase URL
+    private var imageUploadTimeString: String {
+        let urlString = url.absoluteString
+        
+        // Extract timestamp from filename pattern: timestamp_uuid_random.jpg
+        // Split by '/' and look for the filename component
+        let urlComponents = urlString.components(separatedBy: "/")
+        
+        for component in urlComponents {
+            // Look for components that start with a timestamp pattern
+            if component.contains("_") {
+                let parts = component.components(separatedBy: "_")
+                if parts.count >= 3, let timestamp = Double(parts[0]) {
+                    let date = Date(timeIntervalSince1970: timestamp)
+                    let formatter = DateFormatter()
+                    formatter.dateStyle = .medium
+                    formatter.timeStyle = .short
+                    return "Uploaded \(formatter.string(from: date))"
+                }
+            }
+        }
+        
+        // Fallback
+        return "Image Preview"
+    }
     
     var body: some View {
         Group {
@@ -105,21 +149,41 @@ struct FirebaseImageView: View {
             loadImage()
         }
         .sheet(isPresented: $showModal) {
-            VStack {
-                Text("Testing image in WebView")
-                    .font(.headline)
+            GeometryReader { geometry in
+                VStack {
+                    Text(imageUploadTimeString)
+                        .font(.headline)
+                        .padding()
+                    
+                    if let image = image {
+                        ScrollView([.horizontal, .vertical], showsIndicators: false) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: geometry.size.width - 40,
+                                       maxHeight: geometry.size.height - 150)
+                                .clipped()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        VStack {
+                            ProgressView()
+                            Text("Loading image...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Done") {
+                        showModal = false
+                    }
                     .padding()
-                
-                WebView(url: url)
-                
-                Spacer()
-                
-                Button("Done") {
-                    showModal = false
                 }
-                .padding()
             }
-            .navigationTitle("Image Test")
+            .navigationTitle("Image Viewer")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
