@@ -67,14 +67,26 @@ class ChatManager: ObservableObject {
         }
         
         do {
-            // Handle image upload if it's a local file
+            // Handle image upload if it's a local file or Android content URI
             let finalImageURL: URL
-            if imageURL.scheme == "file" {
-                // Convert local file URL to UIImage and upload to Firebase
+            if imageURL.scheme == "file" || imageURL.scheme == "content" {
+                // Convert local file URL or Android content URI to UIImage and upload to Firebase
                 // Note: Allow anonymous users to upload chat images to public directory
                 
-                // Load image from local file
-                let imageData = try Data(contentsOf: imageURL)
+                // Load image from local file or content URI
+                let imageData: Data
+                if imageURL.scheme == "content" {
+                    // Android content URI - use content resolver
+#if os(Android)
+                    imageData = try Data(contentsOf: imageURL)
+#else
+                    throw NSError(domain: "ChatManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Content URIs not supported on this platform"])
+#endif
+                } else {
+                    // iOS file URL
+                    imageData = try Data(contentsOf: imageURL)
+                }
+                
                 guard let image = UIImage(data: imageData) else {
                     await MainActor.run {
                         isProcessing = false
