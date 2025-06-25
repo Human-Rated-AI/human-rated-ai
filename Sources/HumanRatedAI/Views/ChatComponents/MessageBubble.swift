@@ -78,9 +78,12 @@ struct FirebaseImageView: View {
     private var imageUploadTimeString: String {
         let urlString = url.absoluteString
         
+        // First decode URL encoding (%2F becomes /)
+        let decodedString = urlString.replacingOccurrences(of: "%2F", with: "/")
+        
         // Extract timestamp from filename pattern: timestamp_uuid_random.jpg
         // Split by '/' and look for the filename component
-        let urlComponents = urlString.components(separatedBy: "/")
+        let urlComponents = decodedString.components(separatedBy: "/")
         
         for component in urlComponents {
             // Look for components that start with a timestamp pattern
