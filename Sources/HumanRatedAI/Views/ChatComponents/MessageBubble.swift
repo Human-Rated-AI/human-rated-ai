@@ -11,57 +11,6 @@
 
 import SwiftUI
 
-#if os(iOS)
-import WebKit
-
-struct WebView: UIViewRepresentable {
-    let url: URL
-    
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        
-        // Add some debugging for WebView
-        webView.navigationDelegate = context.coordinator
-        
-        let request = URLRequest(url: url)
-        webView.load(request)
-        return webView
-    }
-    
-    func updateUIView(_ uiView: WKWebView, context: Context) {
-        // No updates needed
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-    
-    class Coordinator: NSObject, WKNavigationDelegate {
-        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            debug("ERROR", WebView.self, "WebView failed to load: \(error.localizedDescription)")
-        }
-        
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            debug("INFO", WebView.self, "WebView finished loading")
-        }
-    }
-}
-#else
-// For Android/Skip - simple fallback
-struct WebView: View {
-    let url: URL
-    
-    var body: some View {
-        VStack {
-            Text("WebView not available on this platform")
-            Text(url.absoluteString)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-    }
-}
-#endif
-
 // Custom image view that handles Firebase Storage URLs better
 struct FirebaseImageView: View {
     let url: URL
@@ -152,42 +101,52 @@ struct FirebaseImageView: View {
             loadImage()
         }
         .sheet(isPresented: $showModal) {
-            GeometryReader { geometry in
-                VStack {
+            VStack(spacing: 16) {
+                // Title - only show if we have a timestamp
+                if !imageUploadTimeString.isEmpty && imageUploadTimeString != "Image Preview" {
                     Text(imageUploadTimeString)
                         .font(.headline)
-                        .padding()
-                    
-                    if let image = image {
-                        ScrollView([.horizontal, .vertical], showsIndicators: false) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(maxWidth: geometry.size.width - 40,
-                                       maxHeight: geometry.size.height - 150)
-                                .clipped()
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        VStack {
-                            ProgressView()
-                            Text("Loading image...")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    
-                    Spacer()
-                    
-                    Button("Done") {
-                        showModal = false
-                    }
-                    .padding()
+                        .padding(.top)
+                } else {
+                    Text("Image Preview")
+                        .font(.headline)
+                        .padding(.top)
                 }
+                
+                // Image display
+                if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 300, maxHeight: 400)
+                        .clipped()
+                        .cornerRadius(8)
+                } else {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                        Text("Loading image...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(width: 200, height: 200)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                
+                Spacer()
+                
+                // Done button
+                Button("Done") {
+                    showModal = false
+                }
+                .font(.headline)
+                .foregroundColor(.blue)
+                .padding(.bottom)
             }
-            .navigationTitle("Image Viewer")
-            .navigationBarTitleDisplayMode(.inline)
+            .padding(.horizontal, 20)
+            .background(Color.white)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     
@@ -201,7 +160,41 @@ struct FirebaseImageView: View {
                 
                 // Use the same method as AvatarView for Firebase Storage URLs
                 if url.absoluteString.contains("firebasestorage.googleapis.com") {
-                    // Use Firebase SDK directly (same as AvatarView)
+                    #if os(Android)
+                    // For Android: Use URLSession for public chat images to avoid auth issues
+                    if url.absoluteString.contains("public%2Fchat_images") || url.absoluteString.contains("public/chat_images") {
+                        // Use URLSession for public images
+                        var request = URLRequest(url: url)
+                        request.timeoutInterval = 30.0
+                        request.cachePolicy = .reloadIgnoringLocalCacheData
+                        
+                        let (data, response) = try await URLSession.shared.data(for: request)
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            debug("INFO", FirebaseImageView.self, "HTTP Response: \(httpResponse.statusCode)")
+                        }
+                        
+                        guard let uiImage = UIImage(data: data) else {
+                            throw NSError(domain: "ImageError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not create image from data"])
+                        }
+                        
+                        await MainActor.run {
+                            self.image = uiImage
+                            self.isLoading = false
+                            debug("INFO", FirebaseImageView.self, "Successfully loaded public image via URLSession")
+                        }
+                    } else {
+                        // Use Firebase SDK for authenticated images (like avatars)
+                        let image = try await StorageManager.shared.downloadImageFromURL(url)
+                        
+                        await MainActor.run {
+                            self.image = image
+                            self.isLoading = false
+                            debug("INFO", FirebaseImageView.self, "Successfully loaded image via Firebase SDK")
+                        }
+                    }
+                    #else
+                    // For iOS: Use Firebase SDK directly (same as AvatarView) - this was working before
                     let image = try await StorageManager.shared.downloadImageFromURL(url)
                     
                     await MainActor.run {
@@ -209,6 +202,7 @@ struct FirebaseImageView: View {
                         self.isLoading = false
                         debug("INFO", FirebaseImageView.self, "Successfully loaded image via Firebase SDK")
                     }
+                    #endif
                 } else {
                     // For non-Firebase URLs, use URLSession
                     var request = URLRequest(url: url)
